@@ -1,0 +1,148 @@
+.metrics {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.card {
+  padding: 1.5em;
+  border-radius: 1em;
+  background-color: #2c2c2c;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  flex: 1;
+}
+
+.flexbox {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.progress-container {
+  width: 100%;
+  height: 12px;
+  background-color: #2a2a2a;
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 0.5em 0;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+p.data {
+  font-size: 2rem;
+  margin: 0.5em 0 0 0;
+}
+
+.services-list {
+  overflow: auto;
+  max-height: 287px;
+  scroll-snap-type: y mandatory;
+}
+
+.service:first-child {
+  padding: 0;
+  padding-bottom: 0.5em;
+}
+
+.service:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.not-found {
+  text-align: center;
+  color: #999;
+  padding: 0.9em 0 0.5em 0;
+  margin: 0;
+}
+
+.service {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5em 0;
+  border-bottom: 1px solid #444;
+  scroll-snap-align: start;
+  align-items: center;
+}
+
+.service-status.running {
+  background-color: #4caf50;
+}
+
+.service-status.stopped {
+  background-color: #f44336;
+}
+
+.service-status {
+  width: 80px;
+  flex: 0 0 20%;
+  border-radius: 5px;
+  display: grid;
+  place-content: center;
+  padding: 3px;
+  line-height: 1;
+}
+
+.service-name {
+  overflow: auto;
+  flex: 0 0 70%;
+  text-align: left;
+}
+
+.list-section {
+  width: 100%;
+}
+
+.other-data {
+  justify-content: start;
+}
+
+.task-data {
+  text-align: left;
+}
+
+.task-data .service-name {
+  font-weight: 700;
+}
+
+.lists-container {
+  flex-wrap: unset;
+}
+
+.list-container {
+  padding: 1em 0.5em 0.8em 1.5em;
+  border-radius: 1em;
+  background-color: #2c2c2c;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+}
+
+.status {
+    margin-left: 0.5em;
+    font-size: 0.6em;
+}
+
+.status.connected {
+    color: #4caf50;
+}
+
+.status.disconnected {
+    color: #f44336;
+}
+
+@media screen and (max-width: 1080px) {
+  .lists-container {
+    flex-wrap: wrap;
+  }
+}
+
+@media screen and (max-width: 435px) {
+  .cards-container {
+    flex-direction: column;
+  }
+}
