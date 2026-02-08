@@ -6,27 +6,27 @@ import useHasScrollbar from '../hooks/useHasScrollbar';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
 import ProgressCard from '../components/ProgressCard';
 import SearchableList from '../components/SearchableList';
-import ServiceItem from '../components/ServiceItem';
+import ContainerItem from '../components/ContainerItem';
 import TaskItem from '../components/TaskItem';
 import { INITIAL_LIST_COUNT, LIST_INCREMENT } from '../config';
 
 const Metrics = () => {
-    const { data, killTask, isConnected } = useMetrics();
-    const [servicesSearch, setServicesSearch] = useState('');
+    const { data, killTask, containerAction, isConnected } = useMetrics();
+    const [containersSearch, setContainersSearch] = useState('');
     const [tasksSearch, setTasksSearch] = useState('');
     
-    const [servicesRef, servicesHasScrollbar] = useHasScrollbar<HTMLDivElement>([data.services, servicesSearch]);
+    const [containersRef, containersHasScrollbar] = useHasScrollbar<HTMLDivElement>([data.containers, containersSearch]);
     const [tasksRef, tasksHasScrollbar] = useHasScrollbar<HTMLDivElement>([data.tasks, tasksSearch]);
 
-    const filteredServices = data.services.filter((service) =>
-        service.name.toLowerCase().includes(servicesSearch.toLowerCase())
+    const filteredContainers = (data.containers || []).filter((container) =>
+        container.name.toLowerCase().includes(containersSearch.toLowerCase())
     );
 
     const filteredTasks = data.tasks.filter((task) =>
         task.name.toLowerCase().includes(tasksSearch.toLowerCase())
     );
 
-    const [visibleServices, , handleServicesScroll] = useInfiniteScroll(filteredServices, INITIAL_LIST_COUNT, LIST_INCREMENT);
+    const [visibleContainers, , handleContainersScroll] = useInfiniteScroll(filteredContainers, INITIAL_LIST_COUNT, LIST_INCREMENT);
     const [visibleTasks, , handleTasksScroll] = useInfiniteScroll(filteredTasks, INITIAL_LIST_COUNT, LIST_INCREMENT);
 
     return (
@@ -44,19 +44,23 @@ const Metrics = () => {
 
             <div className="flexbox lists-container">
                 <SearchableList
-                    title="Services"
-                    visibleCount={visibleServices.length}
-                    totalCount={filteredServices.length}
-                    searchValue={servicesSearch}
-                    onSearchChange={setServicesSearch}
-                    placeholder="Search services..."
-                    listRef={servicesRef}
-                    hasScrollbar={servicesHasScrollbar}
-                    onScroll={handleServicesScroll}
-                    isEmpty={visibleServices.length === 0}
+                    title="Containers"
+                    visibleCount={visibleContainers.length}
+                    totalCount={filteredContainers.length}
+                    searchValue={containersSearch}
+                    onSearchChange={setContainersSearch}
+                    placeholder="Search containers..."
+                    listRef={containersRef}
+                    hasScrollbar={containersHasScrollbar}
+                    onScroll={handleContainersScroll}
+                    isEmpty={visibleContainers.length === 0}
                 >
-                    {visibleServices.map((service, index) => (
-                        <ServiceItem key={index} {...service} />
+                    {visibleContainers.map((container) => (
+                        <ContainerItem 
+                            key={container.id} 
+                            {...container} 
+                            onAction={containerAction}
+                        />
                     ))}
                 </SearchableList>
 

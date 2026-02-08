@@ -8,13 +8,9 @@ class Config:
     # Metrics
     CPU_COUNT = os.cpu_count() or 1
     METRICS_INTERVAL = 1
-    SERVICES_UPDATE_INTERVAL = 10
+    CONTAINERS_UPDATE_INTERVAL = 10
     TASKS_UPDATE_INTERVAL = 5
     MAX_TASKS = 50
-    
-    # Remote
-    SCREEN_QUALITY = 30
-    SCREEN_FPS = 10
     
     # CORS
     CORS_ORIGINS = ["*"]

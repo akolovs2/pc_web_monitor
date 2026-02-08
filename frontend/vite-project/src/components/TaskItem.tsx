@@ -2,7 +2,7 @@ import type { TaskItemProps } from "../types/Metrics";
 
 const TaskItem = ({ pid, name, cpu, memory, status, onKill }: TaskItemProps) => (
     <div className="service flexbox">
-        <div className="task-data">
+        <div className="item-data">
             <span className="service-name">{name}</span>
             <div className="other-data flexbox">
                 <span className="service-pid">PID: {pid}</span>

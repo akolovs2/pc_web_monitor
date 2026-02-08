@@ -7,7 +7,7 @@ export const useMetrics = () => {
     const [data, setData] = useState<MetricsData>({ 
         cpu: 0, 
         ram: 0, 
-        services: [], 
+        containers: [],
         tasks: [] 
     });
     const [isConnected, setIsConnected] = useState(false);
@@ -91,5 +91,25 @@ export const useMetrics = () => {
         }
     };
 
-    return { data, isConnected, killTask };
+    const containerAction = async (name: string, action: 'start' | 'stop' | 'restart'): Promise<{ success: boolean; message?: string }> => {
+        if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} "${name}"?`)) {
+            return { success: false };
+        }
+        
+        try {
+            const res = await fetch(`${API_URL}/containers/${name}/${action}`, {
+                method: 'POST'
+            });
+            const result = await res.json();
+            if (!result.success) {
+                alert(result.message);
+            }
+            return result;
+        } catch (e) {
+            alert(`Failed to ${action} container: ${e}`);
+            return { success: false, message: String(e) };
+        }
+    };
+
+    return { data, isConnected, killTask, containerAction };
 };

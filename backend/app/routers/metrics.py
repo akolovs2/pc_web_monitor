@@ -10,8 +10,8 @@ router = APIRouter()
 current_metrics = {
     'cpu': 0,
     'ram': 0,
-    'services': [],
-    'tasks': []
+    'tasks': [],
+    'containers': []
 }
 
 async def metrics_monitor():
@@ -23,14 +23,14 @@ async def metrics_monitor():
         current_metrics['cpu'] = cpu
         current_metrics['ram'] = metrics_service.get_ram_percent()
         
-        if counter % config.SERVICES_UPDATE_INTERVAL == 0:
-            current_metrics['services'] = await loop.run_in_executor(
-                None, metrics_service.get_services
-            )
-        
         if counter % config.TASKS_UPDATE_INTERVAL == 0:
             current_metrics['tasks'] = await loop.run_in_executor(
                 None, metrics_service.get_tasks
+            )
+        
+        if counter % config.CONTAINERS_UPDATE_INTERVAL == 0:
+            current_metrics['containers'] = await loop.run_in_executor(
+                None, metrics_service.get_containers
             )
         
         counter += 1

@@ -16,7 +16,7 @@ export interface Task {
 export interface MetricsData {
     cpu: number;
     ram: number;
-    services: Service[];
+    containers: Container[];
     tasks: Task[];
 }
 
@@ -51,4 +51,25 @@ export interface SearchableListProps {
     onScroll: (el: HTMLElement) => void;
     children: ReactNode;
     isEmpty: boolean;
+}
+
+export interface Container {
+    id: string;
+    name: string;
+    status: string;
+    image: string;
+    cpu: number;
+    memory: number;
+    memory_usage: number;
+    memory_limit: number;
+}
+
+export interface ContainerItemProps {
+    id: string;
+    name: string;
+    status: string;
+    image: string;
+    cpu: number;
+    memory: number;
+    onAction: (name: string, action: 'start' | 'stop' | 'restart') => Promise<{ success: boolean; message?: string }>;
 }
