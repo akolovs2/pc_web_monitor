@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from app.services import containers_service
 
-router = APIRouter()
+router = APIRouter(prefix="/docker")
 
 @router.post("/containers/{name}/{action}")
 def control_container(name: str, action: str):

@@ -1,4 +1,4 @@
-import type { TaskItemProps } from "../types/Metrics";
+import type { TaskItemProps } from "../../types/Metrics";
 
 const TaskItem = ({ pid, name, cpu, memory, status, onKill }: TaskItemProps) => (
     <div className="service flexbox">

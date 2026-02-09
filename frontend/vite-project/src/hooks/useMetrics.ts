@@ -1,93 +1,51 @@
-// hooks/useMetrics.ts
-import { useState, useEffect, useRef, useCallback } from 'react';
+// src/hooks/useMetrics.ts
+import { useState, useEffect, useRef } from 'react';
 import type { MetricsData } from '../types/Metrics';
-import { WS_URL, API_URL } from '../config';
+import { fetchWithAuth } from '../services/api';
 
-export const useMetrics = () => {
-    const [data, setData] = useState<MetricsData>({ 
-        cpu: 0, 
-        ram: 0, 
-        containers: [],
-        tasks: [] 
-    });
+const WS_URL = (import.meta.env.VITE_WS_POOL_API);
+
+const initialData: MetricsData = {
+    hostname: '',
+    cpu: 0,
+    ram: 0,
+    tasks: [],
+    containers: []
+};
+
+export function useMetrics() {
+    const [data, setData] = useState<MetricsData>(initialData);
     const [isConnected, setIsConnected] = useState(false);
     const wsRef = useRef<WebSocket | null>(null);
-    const reconnectTimeoutRef = useRef<number | null>(null);
-    const isMountedRef = useRef(true);
-
-    const connect = useCallback(() => {
-        if (!isMountedRef.current) return;
-        if (wsRef.current?.readyState === WebSocket.OPEN) return;
-        if (wsRef.current?.readyState === WebSocket.CONNECTING) return;
-
-        const ws = new WebSocket(WS_URL);
-        wsRef.current = ws;
-
-        ws.onopen = () => {
-            if (!isMountedRef.current) {
-                ws.close();
-                return;
-            }
-            console.log("Connected");
-            setIsConnected(true);
-        };
-
-        ws.onmessage = (event) => {
-            if (isMountedRef.current) {
-                setData(JSON.parse(event.data));
-            }
-        };
-
-        ws.onerror = () => {
-            // Silent in dev mode — StrictMode causes this
-        };
-
-        ws.onclose = () => {
-            if (!isMountedRef.current) return;
-            
-            console.log("Disconnected, reconnecting...");
-            setIsConnected(false);
-            wsRef.current = null;
-            
-            reconnectTimeoutRef.current = window.setTimeout(connect, 2000);
-        };
-    }, []);
 
     useEffect(() => {
-        isMountedRef.current = true;
-        connect();
+        const ws = new WebSocket(`${WS_URL}/ws`);
+        wsRef.current = ws;
 
-        return () => {
-            isMountedRef.current = false;
-            
-            if (reconnectTimeoutRef.current) {
-                clearTimeout(reconnectTimeoutRef.current);
-            }
-            
-            if (wsRef.current) {
-                wsRef.current.onclose = null; // Prevent reconnect on cleanup
-                wsRef.current.close();
-            }
+        ws.onopen = () => setIsConnected(true);
+        ws.onclose = () => setIsConnected(false);
+        ws.onmessage = (event) => {
+            setData(JSON.parse(event.data));
         };
-    }, [connect]);
 
-    const killTask = async (pid: number, name: string): Promise<boolean> => {
-        if (!confirm(`Kill ${name} (PID: ${pid})?`)) return false;
-        
+        return () => ws.close();
+    }, []);
+
+    const killTask = async (pid: number, name: string): Promise<{ success: boolean; message?: string }> => {
+        if (!confirm(`Kill "${name}" (PID: ${pid})?`)) {
+            return { success: false };
+        }
+
         try {
-            const response = await fetch(`${API_URL}/tasks/kill/${pid}`, {
-                method: 'POST'
-            });
-            const result = await response.json();
-            
+            const res = await fetchWithAuth(`/tasks/${pid}`, { method: 'DELETE' });
+            const result = await res.json();
             if (!result.success) {
                 alert(result.message);
-                return false;
             }
-            return true;
-        } catch (error) {
-            alert('Failed to kill process');
-            return false;
+            return result;
+        } catch (e) {
+            alert(`Failed to kill task: ${e}`);
+            return { success: false };
         }
     };
 
@@ -95,11 +53,9 @@ export const useMetrics = () => {
         if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} "${name}"?`)) {
             return { success: false };
         }
-        
+
         try {
-            const res = await fetch(`${API_URL}/containers/${name}/${action}`, {
-                method: 'POST'
-            });
+            const res = await fetchWithAuth(`/docker/containers/${name}/${action}`, { method: 'POST' });
             const result = await res.json();
             if (!result.success) {
                 alert(result.message);
@@ -107,9 +63,9 @@ export const useMetrics = () => {
             return result;
         } catch (e) {
             alert(`Failed to ${action} container: ${e}`);
-            return { success: false, message: String(e) };
+            return { success: false };
         }
     };
 
-    return { data, isConnected, killTask, containerAction };
-};
+    return { data, killTask, containerAction, isConnected };
+}

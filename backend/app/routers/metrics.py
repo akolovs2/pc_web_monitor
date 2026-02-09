@@ -8,6 +8,7 @@ router = APIRouter()
 
 # Global metrics state
 current_metrics = {
+    'hostname': '',
     'cpu': 0,
     'ram': 0,
     'tasks': [],
@@ -17,6 +18,8 @@ current_metrics = {
 async def metrics_monitor():
     counter = 0
     loop = asyncio.get_event_loop()
+
+    current_metrics['hostname'] = metrics_service.get_hostname()
     
     while True:
         cpu = await loop.run_in_executor(None, metrics_service.get_cpu_percent)

@@ -1,19 +1,23 @@
 // pages/Metrics.tsx
-import '../assets/styles/Metrics.css';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMetrics } from '../hooks/useMetrics';
 import useHasScrollbar from '../hooks/useHasScrollbar';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
-import ProgressCard from '../components/ProgressCard';
-import SearchableList from '../components/SearchableList';
-import ContainerItem from '../components/ContainerItem';
-import TaskItem from '../components/TaskItem';
+import ProgressCard from '../features/dashboard/ProgressCard';
+import SearchableList from '../features/dashboard/SearchableList';
+import ContainerItem from '../features/dashboard/ContainerItem';
+import TaskItem from '../features/dashboard/TaskItem';
 import { INITIAL_LIST_COUNT, LIST_INCREMENT } from '../config';
+import { auth } from '../services/auth';
+import '../styles/Metrics.css';
+import { Button } from '../components';
 
 const Metrics = () => {
     const { data, killTask, containerAction, isConnected } = useMetrics();
     const [containersSearch, setContainersSearch] = useState('');
     const [tasksSearch, setTasksSearch] = useState('');
+
+    const [username, setUsername] = useState('');
     
     const [containersRef, containersHasScrollbar] = useHasScrollbar<HTMLDivElement>([data.containers, containersSearch]);
     const [tasksRef, tasksHasScrollbar] = useHasScrollbar<HTMLDivElement>([data.tasks, tasksSearch]);
@@ -28,15 +32,21 @@ const Metrics = () => {
 
     const [visibleContainers, , handleContainersScroll] = useInfiniteScroll(filteredContainers, INITIAL_LIST_COUNT, LIST_INCREMENT);
     const [visibleTasks, , handleTasksScroll] = useInfiniteScroll(filteredTasks, INITIAL_LIST_COUNT, LIST_INCREMENT);
-
+    
+    useEffect(() => {
+        auth.getUsername().then((name) => {
+            if (name) setUsername(name);
+        });
+    }, []);
+    
     return (
         <div className="metrics">
-            <h1>PC metrics</h1>
-            
-            <span className={`status ${isConnected ? 'connected' : 'disconnected'}`}>
-                {isConnected ? '●' : '○'}
-            </span>
-            
+            <div className='user-info'>
+                 Welcome, {username} <Button onClick={() => auth.logout()}>Logout</Button>
+            </div>
+
+            <h1>{data.hostname || 'Loading...'}</h1>
+
             <div className="flexbox cards-container">
                 <ProgressCard title="CPU" value={data.cpu} />
                 <ProgressCard title="RAM" value={data.ram} />
@@ -64,7 +74,7 @@ const Metrics = () => {
                     ))}
                 </SearchableList>
 
-                <SearchableList
+                {/*<SearchableList
                     title="Tasks"
                     visibleCount={visibleTasks.length}
                     totalCount={filteredTasks.length}
@@ -79,7 +89,7 @@ const Metrics = () => {
                     {visibleTasks.map((task) => (
                         <TaskItem key={task.pid} {...task} onKill={killTask} />
                     ))}
-                </SearchableList>
+                </SearchableList>*/}
             </div>
         </div>
     );

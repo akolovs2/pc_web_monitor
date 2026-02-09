@@ -1,1 +1,1 @@
-from . import metrics_service, process_service, containers_service
+from . import metrics_service, process_service, containers_service, auth_service

@@ -1,20 +1,19 @@
 # app/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import config
-from app.routers import metrics, tasks, containers
+from app.models.database import database, init_db
+from app.routers import metrics, tasks, containers, auth
+from app.services.auth_service import get_current_user
 
 def create_app() -> FastAPI:
     app = FastAPI(
         title="PC Monitor API",
-        description="Monitor and control your PC remotely",
-        version="1.0.0",
         docs_url=None,
         redoc_url=None,
         openapi_url=None
     )
     
-    # CORS
     app.add_middleware(
         CORSMiddleware,
         allow_origins=config.CORS_ORIGINS,
@@ -23,15 +22,24 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     
-    # Routers
-    app.include_router(metrics.router)
-    app.include_router(containers.router)
-    app.include_router(tasks.router)
+    # Public
+    app.include_router(auth.router)
     
-    # Startup events
+    # Metrics router handles its own auth for WebSocket
+    app.include_router(metrics.router)
+    
+    # Protected
+    app.include_router(tasks.router, dependencies=[Depends(get_current_user)])
+    app.include_router(containers.router, dependencies=[Depends(get_current_user)])
+    
     @app.on_event("startup")
     async def startup():
+        await init_db()
         metrics.start_metrics_monitor()
+    
+    @app.on_event("shutdown")
+    async def shutdown():
+        await database.disconnect()
     
     return app
 

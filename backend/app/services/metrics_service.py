@@ -1,6 +1,7 @@
 # app/services/metrics_service.py
 import psutil
 import docker
+import socket
 from app.config import config
 
 client = docker.from_env()
@@ -73,3 +74,6 @@ def get_containers() -> list[dict]:
         return containers
     except Exception:
         return []
+    
+def get_hostname() -> str:
+    return socket.gethostname()

@@ -1,4 +1,5 @@
-import type { SearchableListProps } from "../types/Metrics";
+import type { SearchableListProps } from "../../types/Metrics";
+import { Input } from "../../components";
 
 const SearchableList = ({
     title,
@@ -16,9 +17,9 @@ const SearchableList = ({
     <div className="list-section">
         <h2>{title} ({visibleCount}/{totalCount})</h2>
         <div className="search-bar">
-            <input 
-                type="text" 
+            <Input
                 placeholder={placeholder}
+                type="text"
                 value={searchValue}
                 onChange={(e) => onSearchChange(e.target.value)}
             />

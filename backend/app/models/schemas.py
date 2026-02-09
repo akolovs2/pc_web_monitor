@@ -27,6 +27,7 @@ class ContainerAction(BaseModel):
     message: str
 
 class Metrics(BaseModel):
+    hostname: str
     cpu: float
     ram: float
     services: list[Service]
@@ -35,3 +36,11 @@ class Metrics(BaseModel):
 class KillResponse(BaseModel):
     success: bool
     message: str
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class AuthResponse(BaseModel):
+    success: bool
+    username: str

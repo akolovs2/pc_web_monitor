@@ -14,6 +14,7 @@ export interface Task {
 }
 
 export interface MetricsData {
+    hostname: string;
     cpu: number;
     ram: number;
     containers: Container[];
