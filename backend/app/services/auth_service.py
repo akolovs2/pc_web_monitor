@@ -43,16 +43,14 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
         value=access_token,
         httponly=True,
         samesite="lax",
-        secure=config.SECURE_COOKIES,
-        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        secure=config.SECURE_COOKIES
     )
     response.set_cookie(
         key=REFRESH_COOKIE,
         value=refresh_token,
         httponly=True,
         samesite="lax",
-        secure=config.SECURE_COOKIES,
-        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600
+        secure=config.SECURE_COOKIES
     )
 
 def clear_auth_cookies(response: Response):
