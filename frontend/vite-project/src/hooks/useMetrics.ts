@@ -1,4 +1,3 @@
-// src/hooks/useMetrics.ts
 import { useState, useEffect, useRef } from 'react';
 import type { MetricsData } from '../types/Metrics';
 import { fetchWithAuth } from '../services/api';
@@ -31,6 +30,7 @@ export function useMetrics() {
         return () => ws.close();
     }, []);
 
+    // Deprecated module for now, but may be used in the future for more complex interactions
     const killTask = async (pid: number, name: string): Promise<{ success: boolean; message?: string }> => {
         if (!confirm(`Kill "${name}" (PID: ${pid})?`)) {
             return { success: false };

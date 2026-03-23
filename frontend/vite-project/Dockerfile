@@ -1,9 +1,9 @@
-# Multi-stage Dockerfile for a Vite frontend (no nginx)
 FROM node:18-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --silent
 COPY . .
+COPY .env . 
 RUN npm run build
 
 FROM node:18-alpine AS runtime

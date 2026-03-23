@@ -1,4 +1,4 @@
-# app/routers/tasks.py
+# Deprecated module, but can be useful for futureproofing.
 from fastapi import APIRouter
 from app.services.process_service import kill_process
 from app.models.schemas import KillResponse

@@ -1,4 +1,4 @@
-# app/models/database.py
+# TODO: Migrate to from SQLite to PostgreSQL for better performance and scalability in production and SQLAlchemy for easier database management and migrations. For now, using SQLite for simplicity in development and testing.
 from databases import Database
 import os
 

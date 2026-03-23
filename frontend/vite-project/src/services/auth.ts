@@ -1,5 +1,6 @@
-// src/services/auth.ts
 const API_URL = import.meta.env.VITE_API_URL;
+
+//console.log('API_URL:', API_URL);
 
 export const auth = {
     async login(username: string, password: string) {

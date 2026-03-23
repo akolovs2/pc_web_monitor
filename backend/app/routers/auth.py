@@ -1,4 +1,3 @@
-# app/routers/auth.py
 from fastapi import APIRouter, HTTPException, Response, Request, Depends
 from app.models.schemas import LoginRequest, AuthResponse
 from app.services import auth_service

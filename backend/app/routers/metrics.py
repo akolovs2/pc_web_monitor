@@ -1,4 +1,3 @@
-# app/routers/metrics.py
 import asyncio
 from fastapi import APIRouter, WebSocket
 from app.services import metrics_service
@@ -6,7 +5,6 @@ from app.config import config
 
 router = APIRouter()
 
-# Global metrics state
 current_metrics = {
     'hostname': '',
     'cpu': 0,

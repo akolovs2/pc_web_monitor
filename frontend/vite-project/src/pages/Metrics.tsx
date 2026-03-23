@@ -1,4 +1,3 @@
-// pages/Metrics.tsx
 import { useState, useEffect } from 'react';
 import { useMetrics } from '../hooks/useMetrics';
 import useHasScrollbar from '../hooks/useHasScrollbar';
@@ -6,7 +5,7 @@ import useInfiniteScroll from '../hooks/useInfiniteScroll';
 import ProgressCard from '../features/dashboard/ProgressCard';
 import SearchableList from '../features/dashboard/SearchableList';
 import ContainerItem from '../features/dashboard/ContainerItem';
-import TaskItem from '../features/dashboard/TaskItem';
+//import TaskItem from '../features/dashboard/TaskItem';
 import { INITIAL_LIST_COUNT, LIST_INCREMENT } from '../config';
 import { auth } from '../services/auth';
 import '../styles/Metrics.css';
@@ -30,8 +29,8 @@ const Metrics = () => {
         task.name.toLowerCase().includes(tasksSearch.toLowerCase())
     );
 
-    const [visibleContainers, , handleContainersScroll] = useInfiniteScroll(filteredContainers, INITIAL_LIST_COUNT, LIST_INCREMENT);
-    const [visibleTasks, , handleTasksScroll] = useInfiniteScroll(filteredTasks, INITIAL_LIST_COUNT, LIST_INCREMENT);
+    const { visibleItems: visibleContainers, handleScroll: handleContainersScroll } = useInfiniteScroll(filteredContainers, INITIAL_LIST_COUNT, LIST_INCREMENT);
+    //const { visibleItems: visibleTasks, handleScroll: handleTasksScroll } = useInfiniteScroll(filteredTasks, INITIAL_LIST_COUNT, LIST_INCREMENT);
     
     useEffect(() => {
         auth.getUsername().then((name) => {

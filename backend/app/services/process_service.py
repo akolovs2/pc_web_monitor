@@ -1,4 +1,4 @@
-# app/services/process_service.py
+# Process management service for killing processes by PID, but deprecated in favor of container management. Kept for potential future use or reference.
 import sys
 import os
 import signal

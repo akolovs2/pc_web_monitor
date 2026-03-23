@@ -1,4 +1,3 @@
-// src/services/api.ts
 import { auth } from './auth';
 
 const API_URL = import.meta.env.VITE_API_URL;

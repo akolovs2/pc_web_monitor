@@ -1,4 +1,5 @@
-# app/services/auth_service.py
+# TODO - Implement CSRF protection for state-changing endpoints (logout, token refresh) using double submit cookie pattern or same-site cookies.
+
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
 from passlib.context import CryptContext
@@ -78,6 +79,7 @@ async def login_user(username: str, password: str) -> dict | None:
     access_token = create_access_token(username)
     refresh_token = create_refresh_token(username)
     
+    # Store refresh token in DB for session management and revocation
     await database.execute(
         "UPDATE users SET refresh_token = :token WHERE id = :id",
         {"token": refresh_token, "id": row["id"]}
@@ -90,6 +92,7 @@ async def refresh_tokens(refresh_token: str) -> dict | None:
     if not username:
         return None
     
+    # Verify that the refresh token matches the one stored in the database
     row = await database.fetch_one(
         "SELECT id, refresh_token FROM users WHERE username = :username",
         {"username": username}

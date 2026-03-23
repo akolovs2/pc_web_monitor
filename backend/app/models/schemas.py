@@ -1,4 +1,3 @@
-# app/models/schemas.py
 from pydantic import BaseModel
 
 class Service(BaseModel):

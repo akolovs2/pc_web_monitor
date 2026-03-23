@@ -1,4 +1,3 @@
-/* Button */
 .btn {
     border-radius: 8px;
     border: 1px solid transparent;
@@ -32,7 +31,6 @@
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-/* Input */
 .form-group {
     margin-bottom: 1em;
     text-align: left;
@@ -73,7 +71,6 @@
     display: block;
 }
 
-/* Spinner */
 .spinner {
     display: inline-block;
     border: 2px solid #ccc;

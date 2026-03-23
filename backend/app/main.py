@@ -1,4 +1,3 @@
-# app/main.py
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import config
@@ -8,7 +7,7 @@ from app.services.auth_service import get_current_user
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="PC Monitor API",
+        title="PC/Server Monitor API",
         docs_url=None,
         redoc_url=None,
         openapi_url=None
@@ -22,13 +21,11 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     
-    # Public
+    # Public routes
     app.include_router(auth.router)
-    
-    # Metrics router handles its own auth for WebSocket
     app.include_router(metrics.router)
     
-    # Protected
+    # Protected routes
     app.include_router(tasks.router, dependencies=[Depends(get_current_user)])
     app.include_router(containers.router, dependencies=[Depends(get_current_user)])
     

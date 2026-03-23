@@ -2,13 +2,12 @@ import type { ContainerItemProps } from "../../types/Metrics";
 import { useState, useEffect, useRef } from 'react';
 import { Button, Spinner } from "../../components";
 
-const ContainerItem = ({ name, status, image, cpu, memory, onAction }: ContainerItemProps) => {
+const ContainerItem = ({ name, status, cpu, memory, onAction }: ContainerItemProps) => {
     const [loading, setLoading] = useState(false);
     const [pendingAction, setPendingAction] = useState<string | null>(null);
     const prevStatusRef = useRef(status);
     
     useEffect(() => {
-        // For start/stop: status changes
         if (status !== prevStatusRef.current) {
             setLoading(false);
             setPendingAction(null);
@@ -17,12 +16,11 @@ const ContainerItem = ({ name, status, image, cpu, memory, onAction }: Container
     }, [status]);
     
     useEffect(() => {
-        // For restart: use timeout since status doesn't change
         if (pendingAction === 'restart' && loading) {
             const timeout = setTimeout(() => {
                 setLoading(false);
                 setPendingAction(null);
-            }, 5000); // 5 sec timeout for restart
+            }, 5000);
             return () => clearTimeout(timeout);
         }
     }, [pendingAction, loading]);

@@ -1,4 +1,3 @@
-# app/services/metrics_service.py
 import psutil
 import docker
 import socket
@@ -52,7 +51,6 @@ def get_containers() -> list[dict]:
                 try:
                     stats = c.stats(stream=False)
                     
-                    # CPU percentage
                     cpu_delta = stats['cpu_stats']['cpu_usage']['total_usage'] - \
                                 stats['precpu_stats']['cpu_usage']['total_usage']
                     system_delta = stats['cpu_stats']['system_cpu_usage'] - \
@@ -61,7 +59,6 @@ def get_containers() -> list[dict]:
                     if system_delta > 0:
                         data['cpu'] = round((cpu_delta / system_delta) * 100, 2)
                     
-                    # Memory
                     data['memory_usage'] = stats['memory_stats'].get('usage', 0)
                     data['memory_limit'] = stats['memory_stats'].get('limit', 0)
                     

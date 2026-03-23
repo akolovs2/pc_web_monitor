@@ -19,7 +19,7 @@ const Button = ({
         disabled={disabled || loading}
         {...props}
     >
-        {loading ? <span className="spinner" /> : children}
+        {loading ? <span className="spinner spinner-md" /> : children}
     </button>
 );
 

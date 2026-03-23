@@ -5,7 +5,7 @@ from app.services.auth_service import hash_password
 async def create_admin():
     await init_db()
     
-    password_hash = hash_password("")
+    password_hash = hash_password("") # Master admin initial pwd.
     
     try:
         await database.execute(

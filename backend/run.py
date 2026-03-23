@@ -1,4 +1,3 @@
-# run.py
 import uvicorn
 from app.config import config
 
@@ -7,5 +6,5 @@ if __name__ == "__main__":
         "app.main:app",
         host=config.HOST,
         port=config.PORT,
-        reload=True  # Remove in production
+        reload=True  # Remove in prod
     )
