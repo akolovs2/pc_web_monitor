@@ -45,6 +45,48 @@ class ContainerInfo:
 
 
 @dataclass(frozen=True)
+class ContainerDetails:
+    id: str
+    name: str
+    status: str
+    image: str
+    image_id: str
+    created: str
+    started_at: str
+    finished_at: str
+    restart_policy: str
+    ports: List[Dict[str, Any]]
+    env: List[str]
+    volumes: List[Dict[str, Any]]
+    command: Optional[str]
+    memory_limit: int
+    cpu_shares: int
+    networks: List[str]
+    ip_address: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "status": self.status,
+            "image": self.image,
+            "image_id": self.image_id,
+            "created": self.created,
+            "started_at": self.started_at,
+            "finished_at": self.finished_at,
+            "restart_policy": self.restart_policy,
+            "ports": self.ports,
+            "env": self.env,
+            "volumes": self.volumes,
+            "command": self.command,
+            "memory_limit": self.memory_limit,
+            "cpu_shares": self.cpu_shares,
+            "networks": self.networks,
+            "ip_address": self.ip_address,
+        }
+
+
+@dataclass(frozen=True)
 class TaskInfo:
     pid: int
     name: str

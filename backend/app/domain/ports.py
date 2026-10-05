@@ -3,6 +3,7 @@ from typing import Protocol, List, Optional, Tuple
 from app.domain.models import (
     StorageInfo,
     ContainerInfo,
+    ContainerDetails,
     TaskInfo,
     HistoricalMetricPoint,
     ContainerActionResult,
@@ -32,6 +33,15 @@ class IContainerRuntime(Protocol):
         restart_policy: str = "unless-stopped",
         command: Optional[str] = None,
     ) -> ContainerActionResult: ...
+    def inspect_container(self, name: str) -> Optional[ContainerDetails]: ...
+    def update_container(
+        self,
+        name: str,
+        restart_policy: Optional[str] = None,
+        mem_limit: Optional[int] = None,
+        cpu_shares: Optional[int] = None,
+    ) -> ContainerActionResult: ...
+    def rename_container(self, name: str, new_name: str) -> ContainerActionResult: ...
 
 
 class IMetricsRepository(Protocol):

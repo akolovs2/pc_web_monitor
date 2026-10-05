@@ -110,3 +110,74 @@ class ContainerService:
             restart_policy=restart_policy,
             command=command,
         )
+
+    def inspect_container(self, name: str) -> Optional[Dict[str, Any]]:
+        clean_name = name.strip()
+        details = self._runtime.inspect_container(clean_name)
+        return details.to_dict() if details else None
+
+    def update_container(
+        self,
+        name: str,
+        restart_policy: Optional[str] = None,
+        mem_limit: Optional[int] = None,
+        cpu_shares: Optional[int] = None,
+    ) -> ContainerActionResult:
+        clean_name = name.strip()
+        if any(clean_name.startswith(p) for p in self._hidden_prefixes):
+            return ContainerActionResult(success=False, message="Action not permitted on protected infrastructure container")
+        return self._runtime.update_container(
+            name=clean_name,
+            restart_policy=restart_policy,
+            mem_limit=mem_limit,
+            cpu_shares=cpu_shares,
+        )
+
+    def rename_container(self, name: str, new_name: str) -> ContainerActionResult:
+        clean_name = name.strip()
+        clean_new = new_name.strip()
+        if any(clean_name.startswith(p) for p in self._hidden_prefixes):
+            return ContainerActionResult(success=False, message="Action not permitted on protected infrastructure container")
+        if any(clean_new.startswith(p) for p in self._hidden_prefixes):
+            return ContainerActionResult(success=False, message="Cannot rename container to protected name prefix")
+        return self._runtime.rename_container(clean_name, clean_new)
+
+    def recreate_container(
+        self,
+        name: str,
+        image: str,
+        new_name: Optional[str] = None,
+        ports: Optional[Union[List[str], Dict[str, Any]]] = None,
+        env: Optional[Union[List[str], Dict[str, str]]] = None,
+        volumes: Optional[Union[List[str], Dict[str, Any]]] = None,
+        restart_policy: str = "unless-stopped",
+        command: Optional[str] = None,
+    ) -> ContainerActionResult:
+        clean_name = name.strip()
+        if any(clean_name.startswith(p) for p in self._hidden_prefixes):
+            return ContainerActionResult(success=False, message="Cannot modify protected infrastructure container")
+
+        target_name = new_name.strip() if new_name and new_name.strip() else clean_name
+        if any(target_name.startswith(p) for p in self._hidden_prefixes):
+            return ContainerActionResult(success=False, message="Cannot use protected prefix for container name")
+
+        # Stop existing container if running
+        self._runtime.execute_action(clean_name, "stop", self._hidden_prefixes)
+        # Remove existing container
+        rm_res = self._runtime.execute_action(clean_name, "remove", self._hidden_prefixes)
+        if not rm_res.success and "not found" not in rm_res.message.lower():
+            return ContainerActionResult(
+                success=False,
+                message=f"Failed to remove existing container during recreation: {rm_res.message}",
+            )
+
+        # Deploy new container with target configuration
+        return self.deploy_container(
+            image=image,
+            name=target_name,
+            ports=ports,
+            env=env,
+            volumes=volumes,
+            restart_policy=restart_policy,
+            command=command,
+        )

@@ -6,16 +6,25 @@ import ProgressCard from "../features/dashboard/ProgressCard";
 import SearchableList from "../features/dashboard/SearchableList";
 import ContainerItem from "../features/dashboard/ContainerItem";
 import CreateContainerDialog from "../features/dashboard/CreateContainerDialog";
+import ManageContainerDialog from "../features/dashboard/ManageContainerDialog";
 import { INITIAL_LIST_COUNT, LIST_INCREMENT } from "../config";
 import { auth } from "../services/auth";
 import { Button, Badge, MetricsHistoryCard } from "../components";
 import { Server, LogOut, User, Activity, Terminal, Plus } from "lucide-react";
 
 const Metrics = () => {
-  const { data, containerAction, createContainer } = useMetrics();
+  const {
+    data,
+    containerAction,
+    createContainer,
+    inspectContainer,
+    updateContainer,
+    recreateContainer,
+  } = useMetrics();
   const [containersSearch, setContainersSearch] = useState("");
   const [username, setUsername] = useState("");
   const [showDeployDialog, setShowDeployDialog] = useState(false);
+  const [managingContainer, setManagingContainer] = useState<string | null>(null);
 
   const [containersRef, containersHasScrollbar] = useHasScrollbar<HTMLDivElement>([
     data.containers,
@@ -162,6 +171,7 @@ const Metrics = () => {
                 key={container.id}
                 {...container}
                 onAction={containerAction}
+                onManage={(name) => setManagingContainer(name)}
               />
             ))}
           </SearchableList>
@@ -173,6 +183,19 @@ const Metrics = () => {
         open={showDeployDialog}
         onOpenChange={setShowDeployDialog}
         onDeploy={createContainer}
+      />
+
+      {/* Manage & Edit Container Dialog */}
+      <ManageContainerDialog
+        containerName={managingContainer}
+        open={managingContainer !== null}
+        onOpenChange={(open) => {
+          if (!open) setManagingContainer(null);
+        }}
+        onInspect={inspectContainer}
+        onUpdate={updateContainer}
+        onRecreate={recreateContainer}
+        onAction={containerAction}
       />
     </div>
   );

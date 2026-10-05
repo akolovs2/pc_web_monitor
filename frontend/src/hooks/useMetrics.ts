@@ -1,5 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import type { MetricsData, ContainerActionType } from '../types/Metrics';
+import type {
+    MetricsData,
+    ContainerActionType,
+    ContainerDetails,
+    CreateContainerParams,
+    UpdateContainerParams,
+    RecreateContainerParams,
+} from '../types/Metrics';
 import { fetchWithAuth } from '../services/api';
 
 import { WS_URL } from '../config';
@@ -63,7 +70,7 @@ export function useMetrics() {
         }
     };
 
-    const createContainer = async (params: import('../types/Metrics').CreateContainerParams): Promise<{ success: boolean; message?: string }> => {
+    const createContainer = async (params: CreateContainerParams): Promise<{ success: boolean; message?: string }> => {
         try {
             const res = await fetchWithAuth('/docker/containers/create', {
                 method: 'POST',
@@ -78,5 +85,55 @@ export function useMetrics() {
         }
     };
 
-    return { data, killTask, containerAction, createContainer, isConnected };
-}
+    const inspectContainer = async (name: string): Promise<ContainerDetails | null> => {
+        try {
+            const res = await fetchWithAuth(`/docker/containers/${name}`);
+            if (!res.ok) {
+                return null;
+            }
+            return await res.json();
+        } catch (e) {
+            console.error(`Failed to inspect container ${name}:`, e);
+            return null;
+        }
+    };
+
+    const updateContainer = async (name: string, params: UpdateContainerParams): Promise<{ success: boolean; message?: string }> => {
+        try {
+            const res = await fetchWithAuth(`/docker/containers/${name}/update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(params),
+            });
+            return await res.json();
+        } catch (e) {
+            console.error(`Failed to update container ${name}:`, e);
+            return { success: false, message: String(e) };
+        }
+    };
+
+    const recreateContainer = async (name: string, params: RecreateContainerParams): Promise<{ success: boolean; message?: string }> => {
+        try {
+            const res = await fetchWithAuth(`/docker/containers/${name}/recreate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(params),
+            });
+            return await res.json();
+        } catch (e) {
+            console.error(`Failed to recreate container ${name}:`, e);
+            return { success: false, message: String(e) };
+        }
+    };
+
+    return {
+        data,
+        killTask,
+        containerAction,
+        createContainer,
+        inspectContainer,
+        updateContainer,
+        recreateContainer,
+        isConnected,
+    };
+}

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import type { ContainerItemProps, ContainerActionType } from "../../types/Metrics";
 import { Button, Badge, Spinner, ConfirmDialog } from "../../components";
-import { Play, Square, RotateCw, Trash2, Box, Cpu, Database } from "lucide-react";
+import { Play, Square, RotateCw, Trash2, Box, Cpu, Database, Sliders } from "lucide-react";
 
-const ContainerItem = React.memo(({ name, status, cpu, memory, onAction }: ContainerItemProps) => {
+const ContainerItem = React.memo(({ name, status, cpu, memory, onAction, onManage }: ContainerItemProps) => {
   const [loading, setLoading] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [prevStatus, setPrevStatus] = useState(status);
@@ -136,6 +136,16 @@ const ContainerItem = React.memo(({ name, status, cpu, memory, onAction }: Conta
                   Start
                 </Button>
               )}
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onManage?.(name)}
+                className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                title="Manage & Edit Container"
+              >
+                <Sliders className="h-3.5 w-3.5" />
+              </Button>
 
               <Button
                 variant="ghost"
