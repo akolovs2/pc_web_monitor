@@ -3,7 +3,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --silent
 COPY . .
-COPY .env . 
+RUN if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env; fi
 RUN npm run build
 
 FROM node:22-alpine AS runtime
