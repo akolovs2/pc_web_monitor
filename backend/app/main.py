@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import config
-from app.routers import metrics, tasks, containers
+from app.routers import metrics, tasks, containers, terminal
 from app.services.auth_service import get_current_user
 
 from app.models.database import init_db
@@ -23,6 +23,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(metrics.router)
+    app.include_router(terminal.router)
     app.include_router(tasks.router, dependencies=[Depends(get_current_user)])
     app.include_router(containers.router, dependencies=[Depends(get_current_user)])
 

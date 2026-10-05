@@ -8,7 +8,7 @@ import ContainerItem from "../features/dashboard/ContainerItem";
 import { INITIAL_LIST_COUNT, LIST_INCREMENT } from "../config";
 import { auth } from "../services/auth";
 import { Button, Badge, MetricsHistoryCard } from "../components";
-import { Server, LogOut, User, Activity } from "lucide-react";
+import { Server, LogOut, User, Activity, Terminal } from "lucide-react";
 
 const Metrics = () => {
   const { data, containerAction } = useMetrics();
@@ -64,7 +64,18 @@ const Metrics = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open("/terminal", "_blank", "noopener,noreferrer")}
+              className="gap-1.5 text-xs font-medium border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 transition-all cursor-pointer shadow-sm"
+              title="Open Web SSH in new window"
+            >
+              <Terminal className="h-3.5 w-3.5" />
+              <span>Connect WEB SSH</span>
+            </Button>
+
             <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground bg-secondary/40 px-3 py-1.5 rounded-md border border-border/40">
               <User className="h-3.5 w-3.5" />
               <span>{username || "admin"}</span>
