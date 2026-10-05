@@ -65,6 +65,8 @@ export interface Container {
     memory_limit: number;
 }
 
+export type ContainerActionType = 'start' | 'stop' | 'restart' | 'remove' | 'delete';
+
 export interface ContainerItemProps {
     id: string;
     name: string;
@@ -72,5 +74,5 @@ export interface ContainerItemProps {
     image: string;
     cpu: number;
     memory: number;
-    onAction: (name: string, action: 'start' | 'stop' | 'restart') => Promise<{ success: boolean; message?: string }>;
+    onAction: (name: string, action: ContainerActionType) => Promise<{ success: boolean; message?: string }>;
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import type { MetricsData } from '../types/Metrics';
+import type { MetricsData, ContainerActionType } from '../types/Metrics';
 import { fetchWithAuth } from '../services/api';
 
 import { WS_URL } from '../config';
@@ -49,21 +49,14 @@ export function useMetrics() {
         }
     };
 
-    const containerAction = async (name: string, action: 'start' | 'stop' | 'restart'): Promise<{ success: boolean; message?: string }> => {
-        if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} "${name}"?`)) {
-            return { success: false };
-        }
-
+    const containerAction = async (name: string, action: ContainerActionType): Promise<{ success: boolean; message?: string }> => {
         try {
             const res = await fetchWithAuth(`/docker/containers/${name}/${action}`, { method: 'POST' });
             const result = await res.json();
-            if (!result.success) {
-                alert(result.message);
-            }
             return result;
         } catch (e) {
-            alert(`Failed to ${action} container: ${e}`);
-            return { success: false };
+            console.error(`Failed to ${action} container:`, e);
+            return { success: false, message: String(e) };
         }
     };
 

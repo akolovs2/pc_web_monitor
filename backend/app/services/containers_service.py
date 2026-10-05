@@ -8,6 +8,9 @@ def container_action(name: str, action: str) -> dict:
         return {'success': False, 'message': 'Action not permitted on this container'}
     try:
         container = client.containers.get(name)
+        if action in ["remove", "delete"]:
+            container.remove(force=True)
+            return {'success': True, 'message': 'Container deleted successfully'}
         getattr(container, action)()
         return {'success': True, 'message': f'{action} completed'}
     except docker.errors.NotFound:
