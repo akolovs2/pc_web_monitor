@@ -47,10 +47,26 @@ interface ManageContainerDialogProps {
 }
 
 const RESTART_POLICY_OPTIONS: SelectOption[] = [
-  { value: "unless-stopped", label: "unless-stopped" },
-  { value: "always", label: "always" },
-  { value: "on-failure", label: "on-failure" },
-  { value: "no", label: "no" },
+  {
+    value: "unless-stopped",
+    label: "unless-stopped",
+    description: "Recommended (auto-restart unless stopped)",
+  },
+  {
+    value: "always",
+    label: "always",
+    description: "Always restart container on exit",
+  },
+  {
+    value: "on-failure",
+    label: "on-failure",
+    description: "Restart only on non-zero exit code",
+  },
+  {
+    value: "no",
+    label: "no",
+    description: "Run once without auto-restart",
+  },
 ];
 
 export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({

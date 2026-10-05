@@ -28,7 +28,8 @@ export interface SelectProps<T extends string = string> {
   menuClassName?: string;
   size?: "sm" | "default" | "lg";
   icon?: React.ReactNode;
-  align?: "left" | "right";
+  align?: "left" | "right" | "auto";
+  placement?: "auto" | "top" | "bottom";
   id?: string;
   name?: string;
   ariaLabel?: string;
@@ -46,12 +47,17 @@ export function Select<T extends string = string>({
   menuClassName,
   size = "sm",
   icon,
-  align = "left",
+  align = "auto",
+  placement = "auto",
   id,
   name,
   ariaLabel,
 }: SelectProps<T>) {
   const [isOpen, setIsOpen] = React.useState(false);
+  const [openUpward, setOpenUpward] = React.useState(false);
+  const [effectiveAlignRight, setEffectiveAlignRight] = React.useState(false);
+  const [maxMenuHeight, setMaxMenuHeight] = React.useState<number | undefined>(undefined);
+
   const containerRef = React.useRef<HTMLDivElement>(null);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const menuRef = React.useRef<HTMLDivElement>(null);
@@ -64,7 +70,6 @@ export function Select<T extends string = string>({
     }
 
     if (options && options.length > 0) {
-      // Check if any option defines a group
       const hasGroups = options.some((opt) => !!opt.group);
       if (hasGroups) {
         const groupMap = new Map<string, SelectOption<T>[]>();
@@ -87,7 +92,6 @@ export function Select<T extends string = string>({
         return { normalizedGroups: computedGroups, flatOptions: options };
       }
 
-      // Simple flat list without groups
       return {
         normalizedGroups: [{ label: "", options }],
         flatOptions: options,
@@ -112,6 +116,68 @@ export function Select<T extends string = string>({
       setHighlightedIndex(-1);
     }
   }, [isOpen, flatOptions, value]);
+
+  // Dynamic positioning & boundary detection to prevent cropping
+  React.useLayoutEffect(() => {
+    if (!isOpen || !triggerRef.current) return;
+
+    const updatePosition = () => {
+      if (!triggerRef.current) return;
+      const rect = triggerRef.current.getBoundingClientRect();
+      const viewportBelow = window.innerHeight - rect.bottom;
+      const viewportAbove = rect.top;
+
+      // Find closest scroll container or modal to prevent clipping inside dialogs
+      const scrollParent = triggerRef.current.closest(
+        ".overflow-y-auto, .overflow-auto, [role='dialog'], form"
+      );
+      let parentBelow = viewportBelow;
+      let parentAbove = viewportAbove;
+
+      if (scrollParent) {
+        const pRect = scrollParent.getBoundingClientRect();
+        parentBelow = pRect.bottom - rect.bottom;
+        parentAbove = rect.top - pRect.top;
+      }
+
+      const spaceBelow = Math.min(viewportBelow, parentBelow);
+      const spaceAbove = Math.min(viewportAbove, parentAbove);
+
+      // Auto flip upward if space below is too small (e.g. less than 210px) and space above is larger
+      const shouldFlip =
+        placement === "top"
+          ? true
+          : placement === "bottom"
+          ? false
+          : spaceBelow < 210 && spaceAbove > spaceBelow;
+
+      setOpenUpward(shouldFlip);
+
+      // Calculate safe max-height to fit inside container
+      const availableHeight = shouldFlip ? spaceAbove : spaceBelow;
+      const safeMaxHeight = Math.max(100, Math.min(260, Math.floor(availableHeight - 12)));
+      setMaxMenuHeight(safeMaxHeight);
+
+      // Calculate horizontal alignment
+      if (align === "right") {
+        setEffectiveAlignRight(true);
+      } else if (align === "left") {
+        setEffectiveAlignRight(false);
+      } else {
+        // "auto": align right if menu would overflow right screen boundary
+        setEffectiveAlignRight(rect.left + 240 > window.innerWidth - 16);
+      }
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [isOpen, placement, align]);
 
   // Click outside listener
   React.useEffect(() => {
@@ -239,6 +305,11 @@ export function Select<T extends string = string>({
     lg: "h-10 px-3.5 text-sm",
   }[size];
 
+  const triggerTitle =
+    selectedOption && typeof selectedOption.label === "string"
+      ? selectedOption.label
+      : undefined;
+
   return (
     <div
       ref={containerRef}
@@ -264,6 +335,7 @@ export function Select<T extends string = string>({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-label={ariaLabel}
+        title={triggerTitle}
         onClick={() => {
           if (!disabled) setIsOpen((prev) => !prev);
         }}
@@ -277,7 +349,7 @@ export function Select<T extends string = string>({
           triggerClassName
         )}
       >
-        <div className="flex items-center gap-2 truncate pr-2">
+        <div className="flex items-center gap-2 truncate pr-1">
           {icon && <span className="shrink-0 text-muted-foreground">{icon}</span>}
           {selectedOption?.icon && (
             <span className="shrink-0">{selectedOption.icon}</span>
@@ -294,22 +366,25 @@ export function Select<T extends string = string>({
 
         <ChevronDown
           className={cn(
-            "h-3.5 w-3.5 text-muted-foreground/80 shrink-0 transition-transform duration-200",
+            "h-3.5 w-3.5 text-muted-foreground/80 shrink-0 transition-transform duration-200 ml-1.5",
             isOpen && "rotate-180 text-primary"
           )}
         />
       </button>
 
-      {/* Dropdown Menu Popup */}
+      {/* Dropdown Menu Popup with Smart Placement (Up/Down) to prevent cropping */}
       {isOpen && (
         <div
           ref={menuRef}
           role="listbox"
           tabIndex={-1}
+          style={{ maxHeight: maxMenuHeight ? `${maxMenuHeight}px` : undefined }}
           className={cn(
-            "absolute z-50 mt-1 min-w-[160px] w-full rounded-md border border-border bg-[#0d0f14]/98 backdrop-blur-md shadow-2xl p-1 max-h-60 overflow-y-auto",
-            "animate-in fade-in-0 zoom-in-95 duration-100",
-            align === "right" ? "right-0 left-auto" : "left-0",
+            "absolute z-50 min-w-full w-max max-w-[min(380px,calc(100vw-2.5rem))] rounded-md border border-border bg-[#0d0f14]/98 backdrop-blur-md shadow-2xl p-1 overflow-y-auto",
+            openUpward
+              ? "bottom-full mb-1.5 origin-bottom animate-in fade-in-0 slide-in-from-bottom-1 duration-100"
+              : "top-full mt-1.5 origin-top animate-in fade-in-0 slide-in-from-top-1 duration-100",
+            effectiveAlignRight ? "right-0 left-auto" : "left-0",
             menuClassName
           )}
         >
@@ -334,6 +409,8 @@ export function Select<T extends string = string>({
                       const itemIdx = globalIndex++;
                       const isSelected = opt.value === value;
                       const isHighlighted = itemIdx === highlightedIndex;
+                      const optTitle =
+                        typeof opt.label === "string" ? opt.label : undefined;
 
                       return (
                         <div
@@ -342,26 +419,27 @@ export function Select<T extends string = string>({
                           aria-selected={isSelected}
                           aria-disabled={opt.disabled}
                           data-option-index={itemIdx}
+                          title={optTitle}
                           onMouseEnter={() => {
                             if (!opt.disabled) setHighlightedIndex(itemIdx);
                           }}
                           onClick={() => handleSelect(opt)}
                           className={cn(
-                            "w-full text-left px-2 py-1.5 text-xs font-mono rounded cursor-pointer flex items-center justify-between transition-colors select-none",
+                            "w-full text-left px-2.5 py-1.5 text-xs font-mono rounded cursor-pointer flex items-center justify-between transition-colors select-none",
                             opt.disabled && "opacity-40 cursor-not-allowed pointer-events-none",
                             isHighlighted && !isSelected && "bg-secondary/80 text-slate-100",
                             isSelected && "bg-primary/20 text-sky-200 font-medium",
                             !isSelected && !isHighlighted && "text-slate-300 hover:bg-secondary/50"
                           )}
                         >
-                          <div className="flex items-center gap-2 truncate">
+                          <div className="flex items-center gap-2 min-w-0 pr-2">
                             {opt.icon && (
                               <span className="shrink-0 text-muted-foreground">
                                 {opt.icon}
                               </span>
                             )}
-                            <div className="truncate">
-                              <span className="block truncate">{opt.label}</span>
+                            <div className="min-w-0">
+                              <span className="block truncate font-medium">{opt.label}</span>
                               {opt.description && (
                                 <span className="block text-[10px] text-muted-foreground/70 font-sans truncate">
                                   {opt.description}
