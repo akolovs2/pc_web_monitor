@@ -102,30 +102,63 @@ export const MetricLineChart: React.FC<MetricLineChartProps> = React.memo(({
   // Determine min/max range
   const [chartMin, chartMax, tickStep] = useMemo(() => {
     if (values.length === 0) return [0, 100, 20];
-    const rawMin = min !== undefined ? min : Math.min(...values);
-    const rawMax = max !== undefined ? max : Math.max(...values);
-    let mn = Math.floor(rawMin);
-    let mx = Math.ceil(rawMax);
 
-    if (mx === mn) {
-      mx += 10;
-      mn = Math.max(0, mn - 5);
+    const dataMin = Math.min(...values);
+    const dataMax = Math.max(...values);
+
+    // Baseline minimum: default to min prop if provided, else 0 if data >= 0, else floor of dataMin
+    const mn = min !== undefined ? min : dataMin >= 0 ? 0 : Math.floor(dataMin);
+
+    // When max is narrow, adapt to the nearest nice ceiling above dataMax with headroom
+    // Add ~12% headroom above the peak value so the curve doesn't collide with the chart ceiling
+    let effectiveMax: number;
+    if (dataMax <= mn) {
+      effectiveMax = mn + 10;
+    } else {
+      const headroom = (dataMax - mn) * 0.12;
+      effectiveMax = dataMax + Math.max(headroom, dataMax - mn > 10 ? 2 : 0.5);
     }
 
-    const range = mx - mn;
-    let step = 20;
-    if (range <= 10) step = 2;
-    else if (range <= 25) step = 5;
-    else if (range <= 50) step = 10;
-    else if (range <= 100) step = 20;
-    else step = Math.ceil(range / 5 / 10) * 10;
+    // If max prop was provided (e.g. 100% cap):
+    // Only expand all the way to max if dataMax is actually close to max (e.g. >= 85% of max).
+    // When data is narrow, use the nearest nice ceiling calculated from dataMax.
+    if (max !== undefined && dataMax >= max * 0.85) {
+      effectiveMax = Math.max(effectiveMax, max);
+    }
 
-    mn = Math.floor(mn / step) * step;
-    mx = Math.ceil(mx / step) * step;
-    if (mx === mn) mx += step;
+    // Calculate clean "nice" step and niceMax using standard 1, 2, 5 intervals
+    const targetTicks = 4;
+    const rawStep = Math.max(0.1, (effectiveMax - mn) / targetTicks);
+    const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+    const normalized = rawStep / magnitude;
+
+    let niceStepNorm: number;
+    if (normalized <= 1.2) {
+      niceStepNorm = 1;
+    } else if (normalized <= 2.5) {
+      niceStepNorm = 2;
+    } else if (normalized <= 6) {
+      niceStepNorm = 5;
+    } else {
+      niceStepNorm = 10;
+    }
+
+    let step = niceStepNorm * magnitude;
+    let mx = Math.ceil(effectiveMax / step) * step;
+
+    // If percentage metric and dataMax <= 100, ensure ceiling doesn't exceed 100
+    if ((unit === "%" || max === 100) && dataMax <= 100 && mx > 100) {
+      mx = 100;
+      step = 20;
+    }
+
+    // Ensure at least 2 ticks
+    if (mx <= mn) {
+      mx = mn + step;
+    }
 
     return [mn, mx, step];
-  }, [values, min, max]);
+  }, [values, min, max, unit]);
 
   const xOf = useCallback(
     (i: number) => leftPad + (N > 1 ? (i / (N - 1)) * chartW : chartW / 2),
@@ -160,9 +193,15 @@ export const MetricLineChart: React.FC<MetricLineChartProps> = React.memo(({
   // Y-axis tick marks
   const yTicks = useMemo(() => {
     const ticks: { label: string; y: number }[] = [];
-    for (let v = chartMin; v <= chartMax; v += tickStep) {
-      const formatted = formatValue ? formatValue(v) : `${Math.round(v)}${unit}`;
-      ticks.push({ label: formatted, y: yOf(v) });
+    const eps = tickStep * 0.001;
+    for (let v = chartMin; v <= chartMax + eps; v += tickStep) {
+      const rounded = Math.round(v * 100) / 100;
+      const formatted = formatValue
+        ? formatValue(rounded)
+        : rounded % 1 === 0
+        ? `${Math.round(rounded)}${unit}`
+        : `${rounded.toFixed(1)}${unit}`;
+      ticks.push({ label: formatted, y: yOf(rounded) });
     }
     return ticks;
   }, [chartMin, chartMax, tickStep, yOf, formatValue, unit]);
