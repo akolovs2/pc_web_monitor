@@ -1,21 +1,8 @@
-import docker
-from app.config import config
+"""Backward compatibility wrapper delegating to ContainerService."""
+from app.dependencies import get_container_service
 
-client = docker.from_env()
 
 def container_action(name: str, action: str) -> dict:
-    if any(name.startswith(prefix) for prefix in config.HIDDEN_CONTAINERS):
-        return {'success': False, 'message': 'Action not permitted on this container'}
-    try:
-        container = client.containers.get(name)
-        if action in ["remove", "delete"]:
-            container.remove(force=True)
-            return {'success': True, 'message': 'Container deleted successfully'}
-        getattr(container, action)()
-        return {'success': True, 'message': f'{action} completed'}
-    except docker.errors.NotFound:
-        return {'success': False, 'message': 'Container not found'}
-    except docker.errors.APIError as e:
-        return {'success': False, 'message': str(e)}
-    except Exception as e:
-        return {'success': False, 'message': str(e)}
+    service = get_container_service()
+    result = service.execute_action(name, action)
+    return result.to_dict()
