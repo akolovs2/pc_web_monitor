@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type {
     MetricsData,
     ContainerActionType,
@@ -41,7 +41,7 @@ export function useMetrics() {
     }, []);
 
     // Deprecated module for now, but may be used in the future for more complex interactions
-    const killTask = async (pid: number, name: string): Promise<{ success: boolean; message?: string }> => {
+    const killTask = useCallback(async (pid: number, name: string): Promise<{ success: boolean; message?: string }> => {
         if (!confirm(`Kill "${name}" (PID: ${pid})?`)) {
             return { success: false };
         }
@@ -57,9 +57,9 @@ export function useMetrics() {
             alert(`Failed to kill task: ${e}`);
             return { success: false };
         }
-    };
+    }, []);
 
-    const containerAction = async (name: string, action: ContainerActionType): Promise<{ success: boolean; message?: string }> => {
+    const containerAction = useCallback(async (name: string, action: ContainerActionType): Promise<{ success: boolean; message?: string }> => {
         try {
             const res = await fetchWithAuth(`/docker/containers/${name}/${action}`, { method: 'POST' });
             const result = await res.json();
@@ -68,9 +68,9 @@ export function useMetrics() {
             console.error(`Failed to ${action} container:`, e);
             return { success: false, message: String(e) };
         }
-    };
+    }, []);
 
-    const createContainer = async (params: CreateContainerParams): Promise<{ success: boolean; message?: string }> => {
+    const createContainer = useCallback(async (params: CreateContainerParams): Promise<{ success: boolean; message?: string }> => {
         try {
             const res = await fetchWithAuth('/docker/containers/create', {
                 method: 'POST',
@@ -83,11 +83,14 @@ export function useMetrics() {
             console.error('Failed to deploy container:', e);
             return { success: false, message: String(e) };
         }
-    };
+    }, []);
 
-    const inspectContainer = async (name: string): Promise<ContainerDetails | null> => {
+    const inspectContainer = useCallback(async (name: string): Promise<ContainerDetails | null> => {
         try {
-            const res = await fetchWithAuth(`/docker/containers/${name}`);
+            let res = await fetchWithAuth(`/docker/containers/${name}`);
+            if (res.status === 405) {
+                res = await fetchWithAuth(`/docker/containers/${name}/inspect`);
+            }
             if (!res.ok) {
                 return null;
             }
@@ -96,9 +99,9 @@ export function useMetrics() {
             console.error(`Failed to inspect container ${name}:`, e);
             return null;
         }
-    };
+    }, []);
 
-    const updateContainer = async (name: string, params: UpdateContainerParams): Promise<{ success: boolean; message?: string }> => {
+    const updateContainer = useCallback(async (name: string, params: UpdateContainerParams): Promise<{ success: boolean; message?: string }> => {
         try {
             const res = await fetchWithAuth(`/docker/containers/${name}/update`, {
                 method: 'POST',
@@ -110,9 +113,9 @@ export function useMetrics() {
             console.error(`Failed to update container ${name}:`, e);
             return { success: false, message: String(e) };
         }
-    };
+    }, []);
 
-    const recreateContainer = async (name: string, params: RecreateContainerParams): Promise<{ success: boolean; message?: string }> => {
+    const recreateContainer = useCallback(async (name: string, params: RecreateContainerParams): Promise<{ success: boolean; message?: string }> => {
         try {
             const res = await fetchWithAuth(`/docker/containers/${name}/recreate`, {
                 method: 'POST',
@@ -124,7 +127,7 @@ export function useMetrics() {
             console.error(`Failed to recreate container ${name}:`, e);
             return { success: false, message: String(e) };
         }
-    };
+    }, []);
 
     return {
         data,
@@ -136,4 +139,5 @@ export function useMetrics() {
         recreateContainer,
         isConnected,
     };
-}
+}
+

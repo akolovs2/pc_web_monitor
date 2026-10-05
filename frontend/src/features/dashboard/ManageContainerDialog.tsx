@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -73,6 +73,11 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  const onInspectRef = useRef(onInspect);
+  useEffect(() => {
+    onInspectRef.current = onInspect;
+  }, [onInspect]);
+
   // Load details on open or when containerName changes
   useEffect(() => {
     if (!open || !containerName) {
@@ -86,7 +91,7 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
       setLoadingDetails(true);
       setStatusMessage(null);
       try {
-        const res = await onInspect(containerName);
+        const res = await onInspectRef.current(containerName);
         if (!isMounted) return;
 
         if (res) {
@@ -155,7 +160,7 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [open, containerName, onInspect]);
+  }, [open, containerName]);
 
   const handleAddPort = () => setPorts((prev) => [...prev, { host: "", container: "" }]);
   const handleRemovePort = (idx: number) => setPorts((prev) => prev.filter((_, i) => i !== idx));

@@ -57,6 +57,7 @@ def create_container(
 
 
 @router.get("/containers/{name}")
+@router.get("/containers/{name}/inspect")
 def get_container(
     name: str,
     service: ContainerService = Depends(get_container_service),
