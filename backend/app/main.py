@@ -4,6 +4,8 @@ from app.config import config
 from app.routers import metrics, tasks, containers
 from app.services.auth_service import get_current_user
 
+from app.models.database import init_db
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="PC/Server Monitor API",
@@ -26,6 +28,7 @@ def create_app() -> FastAPI:
 
     @app.on_event("startup")
     async def startup():
+        init_db()
         metrics.start_metrics_monitor()
 
     return app

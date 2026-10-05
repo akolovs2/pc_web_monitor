@@ -1,21 +1,27 @@
-# TODO: Migrate to from SQLite to PostgreSQL for better performance and scalability in production and SQLAlchemy for easier database management and migrations. For now, using SQLite for simplicity in development and testing.
-from databases import Database
 import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
+from app.config import config
 
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'auth.db')
-os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+os.makedirs(os.path.dirname(config.DB_PATH), exist_ok=True)
 
-DATABASE_URL = f"sqlite:///{DB_PATH}"
-database = Database(DATABASE_URL)
+DATABASE_URL = f"sqlite:///{config.DB_PATH}"
 
-async def init_db():
-    await database.connect()
-    await database.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            refresh_token TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False}
+)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+def init_db():
+    # Import all models here so tables are registered with Base metadata
+    import app.models.metric_record  # noqa: F401
+    Base.metadata.create_all(bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

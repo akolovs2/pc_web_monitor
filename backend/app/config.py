@@ -19,4 +19,8 @@ class Config:
     CORS_ORIGINS = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "").split(",") if origin.strip()]
     HIDDEN_CONTAINERS = [name.strip() for name in os.getenv("HIDDEN_CONTAINERS", "pc_web_monitor-").split(",") if name.strip()]
 
+    METRICS_RECORD_INTERVAL = int(os.getenv("METRICS_RECORD_INTERVAL", 10))
+    METRICS_RETENTION_DAYS = int(os.getenv("METRICS_RETENTION_DAYS", 14))
+    DB_PATH = os.getenv("METRICS_DB_PATH", os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "metrics.db"))
+
 config = Config()

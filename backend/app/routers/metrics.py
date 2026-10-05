@@ -1,6 +1,6 @@
 import asyncio
 from fastapi import APIRouter, WebSocket
-from app.services import metrics_service
+from app.services import metrics_service, metrics_recorder
 from app.config import config
 
 router = APIRouter()
@@ -42,7 +42,41 @@ async def metrics_monitor():
                 None, metrics_service.get_containers
             )
         
+        # Save snapshot every METRICS_RECORD_INTERVAL (default: 10 seconds)
+        if counter % config.METRICS_RECORD_INTERVAL == 0:
+            containers = current_metrics.get('containers', [])
+            running_count = sum(1 for c in containers if c.get('status') == 'running')
+            await loop.run_in_executor(
+                None,
+                metrics_recorder.record_metric_snapshot,
+                current_metrics['cpu'],
+                current_metrics['ram'],
+                current_metrics['storage'],
+                current_metrics['storage_used'],
+                current_metrics['storage_total'],
+                len(containers),
+                running_count,
+            )
+
+        # Cleanup old records (>14 days) every hour
+        if counter > 0 and counter % 3600 == 0:
+            await loop.run_in_executor(
+                None,
+                metrics_recorder.cleanup_old_metrics,
+                config.METRICS_RETENTION_DAYS,
+            )
+
         counter += 1
+
+@router.get("/metrics/history")
+async def get_history(range: str = "24h", limit: int = 500):
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        None,
+        metrics_recorder.get_metrics_history,
+        range,
+        limit,
+    )
 
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
