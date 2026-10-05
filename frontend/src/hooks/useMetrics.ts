@@ -63,5 +63,20 @@ export function useMetrics() {
         }
     };
 
-    return { data, killTask, containerAction, isConnected };
+    const createContainer = async (params: import('../types/Metrics').CreateContainerParams): Promise<{ success: boolean; message?: string }> => {
+        try {
+            const res = await fetchWithAuth('/docker/containers/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(params),
+            });
+            const result = await res.json();
+            return result;
+        } catch (e) {
+            console.error('Failed to deploy container:', e);
+            return { success: false, message: String(e) };
+        }
+    };
+
+    return { data, killTask, containerAction, createContainer, isConnected };
 }

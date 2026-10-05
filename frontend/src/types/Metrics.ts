@@ -45,6 +45,16 @@ export interface TaskItemProps {
     onKill: (pid: number, name: string) => void;
 }
 
+export interface CreateContainerParams {
+    image: string;
+    name?: string;
+    ports?: string[];
+    env?: string[];
+    volumes?: string[];
+    restart_policy?: string;
+    command?: string;
+}
+
 export interface SearchableListProps {
     title: string;
     visibleCount: number;
@@ -57,6 +67,7 @@ export interface SearchableListProps {
     onScroll: (el: HTMLElement) => void;
     children: ReactNode;
     isEmpty: boolean;
+    extraActions?: ReactNode;
 }
 
 export interface Container {

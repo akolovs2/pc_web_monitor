@@ -14,6 +14,7 @@ const SearchableList = ({
   onScroll,
   children,
   isEmpty,
+  extraActions,
 }: SearchableListProps) => (
   <Card className="w-full bg-card border-border hover:border-border-hover transition-colors">
     <CardHeader className="pb-3 space-y-2 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -31,15 +32,18 @@ const SearchableList = ({
         </div>
       </div>
 
-      <div className="relative w-full sm:w-64">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-        <Input
-          placeholder={placeholder}
-          type="text"
-          value={searchValue}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="h-8 pl-8 text-xs font-mono bg-secondary/30 border-border placeholder:text-muted-foreground/60 focus-visible:ring-1 focus-visible:ring-primary/60"
-        />
+      <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="relative flex-1 sm:w-56">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder={placeholder}
+            type="text"
+            value={searchValue}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="h-8 pl-8 text-xs font-mono bg-secondary/30 border-border placeholder:text-muted-foreground/60 focus-visible:ring-1 focus-visible:ring-primary/60"
+          />
+        </div>
+        {extraActions}
       </div>
     </CardHeader>
 

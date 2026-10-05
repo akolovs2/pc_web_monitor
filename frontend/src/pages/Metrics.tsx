@@ -5,15 +5,17 @@ import useInfiniteScroll from "../hooks/useInfiniteScroll";
 import ProgressCard from "../features/dashboard/ProgressCard";
 import SearchableList from "../features/dashboard/SearchableList";
 import ContainerItem from "../features/dashboard/ContainerItem";
+import CreateContainerDialog from "../features/dashboard/CreateContainerDialog";
 import { INITIAL_LIST_COUNT, LIST_INCREMENT } from "../config";
 import { auth } from "../services/auth";
 import { Button, Badge, MetricsHistoryCard } from "../components";
-import { Server, LogOut, User, Activity, Terminal } from "lucide-react";
+import { Server, LogOut, User, Activity, Terminal, Plus } from "lucide-react";
 
 const Metrics = () => {
-  const { data, containerAction } = useMetrics();
+  const { data, containerAction, createContainer } = useMetrics();
   const [containersSearch, setContainersSearch] = useState("");
   const [username, setUsername] = useState("");
+  const [showDeployDialog, setShowDeployDialog] = useState(false);
 
   const [containersRef, containersHasScrollbar] = useHasScrollbar<HTMLDivElement>([
     data.containers,
@@ -141,6 +143,19 @@ const Metrics = () => {
             hasScrollbar={containersHasScrollbar}
             onScroll={handleContainersScroll}
             isEmpty={visibleContainers.length === 0}
+            extraActions={
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDeployDialog(true)}
+                className="h-8 gap-1.5 text-xs font-mono border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 shrink-0 cursor-pointer"
+                title="Deploy new container from Docker Hub"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Deploy Container</span>
+                <span className="sm:hidden">Deploy</span>
+              </Button>
+            }
           >
             {visibleContainers.map((container) => (
               <ContainerItem
@@ -152,6 +167,13 @@ const Metrics = () => {
           </SearchableList>
         </section>
       </main>
+
+      {/* Deploy Container Dialog */}
+      <CreateContainerDialog
+        open={showDeployDialog}
+        onOpenChange={setShowDeployDialog}
+        onDeploy={createContainer}
+      />
     </div>
   );
 };

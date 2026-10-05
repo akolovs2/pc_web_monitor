@@ -22,6 +22,16 @@ class IContainerRuntime(Protocol):
     """Outbound port for container orchestration (Docker/Podman)."""
     def list_containers(self, hidden_prefixes: Optional[List[str]] = None) -> List[ContainerInfo]: ...
     def execute_action(self, name: str, action: str, hidden_prefixes: Optional[List[str]] = None) -> ContainerActionResult: ...
+    def create_container(
+        self,
+        image: str,
+        name: Optional[str] = None,
+        ports: Optional[dict] = None,
+        environment: Optional[dict] = None,
+        volumes: Optional[dict] = None,
+        restart_policy: str = "unless-stopped",
+        command: Optional[str] = None,
+    ) -> ContainerActionResult: ...
 
 
 class IMetricsRepository(Protocol):

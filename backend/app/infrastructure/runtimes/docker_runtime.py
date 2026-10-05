@@ -105,3 +105,47 @@ class DockerRuntime(IContainerRuntime):
             return ContainerActionResult(success=False, message=msg)
         except Exception as e:
             return ContainerActionResult(success=False, message=f"Unexpected error: {str(e)}")
+
+    def create_container(
+        self,
+        image: str,
+        name: Optional[str] = None,
+        ports: Optional[dict] = None,
+        environment: Optional[dict] = None,
+        volumes: Optional[dict] = None,
+        restart_policy: str = "unless-stopped",
+        command: Optional[str] = None,
+    ) -> ContainerActionResult:
+        if not self._client:
+            return ContainerActionResult(success=False, message="Docker daemon unavailable")
+
+        clean_image = image.strip()
+        if not clean_image:
+            return ContainerActionResult(success=False, message="Image name is required")
+
+        clean_name = name.strip() if name and name.strip() else None
+
+        rp_dict = {"Name": restart_policy} if restart_policy and restart_policy != "no" else None
+
+        try:
+            container = self._client.containers.run(
+                image=clean_image,
+                name=clean_name,
+                ports=ports,
+                environment=environment,
+                volumes=volumes,
+                restart_policy=rp_dict,
+                command=command if command and command.strip() else None,
+                detach=True,
+            )
+            return ContainerActionResult(
+                success=True,
+                message=f"Container '{container.name}' deployed successfully from {clean_image}",
+            )
+        except docker.errors.ImageNotFound:
+            return ContainerActionResult(success=False, message=f"Image '{clean_image}' not found on Docker Hub")
+        except docker.errors.APIError as e:
+            msg = getattr(e, "explanation", str(e)) or str(e)
+            return ContainerActionResult(success=False, message=msg)
+        except Exception as e:
+            return ContainerActionResult(success=False, message=f"Failed to deploy container: {str(e)}")
