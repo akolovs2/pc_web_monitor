@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useMetrics } from "../hooks/useMetrics";
 import useHasScrollbar from "../hooks/useHasScrollbar";
 import useInfiniteScroll from "../hooks/useInfiniteScroll";
@@ -11,6 +11,7 @@ import { INITIAL_LIST_COUNT, LIST_INCREMENT } from "../config";
 import { auth } from "../services/auth";
 import { Button, Badge, MetricsHistoryCard } from "../components";
 import { Server, LogOut, User, Activity, Terminal, Plus } from "lucide-react";
+import type { ContainerSortOption, ContainerStatusFilter } from "../types/Metrics";
 
 const Metrics = () => {
   const {
@@ -25,20 +26,109 @@ const Metrics = () => {
   const [username, setUsername] = useState("");
   const [showDeployDialog, setShowDeployDialog] = useState(false);
   const [managingContainer, setManagingContainer] = useState<string | null>(null);
+  const [sortOption, setSortOption] = useState<ContainerSortOption>("status-desc");
+  const [statusFilter, setStatusFilter] = useState<ContainerStatusFilter>("all");
+
+  // Calculate live container counts by status
+  const statusCounts = useMemo(() => {
+    const list = data.containers || [];
+    let running = 0;
+    let stopped = 0;
+    for (const c of list) {
+      if (c.status === "running") running++;
+      else stopped++;
+    }
+    return { all: list.length, running, stopped };
+  }, [data.containers]);
+
+  // Live filter and sort containers (auto-recalculates on every telemetry interval)
+  const filteredAndSortedContainers = useMemo(() => {
+    let result = data.containers || [];
+
+    // 1. Status Filter
+    if (statusFilter === "running") {
+      result = result.filter((c) => c.status === "running");
+    } else if (statusFilter === "stopped") {
+      result = result.filter((c) => c.status !== "running");
+    }
+
+    // 2. Text Search (Matches name, image tag, or container ID)
+    const query = containersSearch.trim().toLowerCase();
+    if (query) {
+      result = result.filter(
+        (c) =>
+          c.name.toLowerCase().includes(query) ||
+          c.image.toLowerCase().includes(query) ||
+          c.id.toLowerCase().includes(query)
+      );
+    }
+
+    // 3. Sorting
+    const sorted = [...result];
+    sorted.sort((a, b) => {
+      switch (sortOption) {
+        case "status-desc": {
+          const aRun = a.status === "running" ? 1 : 0;
+          const bRun = b.status === "running" ? 1 : 0;
+          if (bRun !== aRun) return bRun - aRun;
+          return a.name.localeCompare(b.name);
+        }
+        case "status-asc": {
+          const aRun = a.status === "running" ? 1 : 0;
+          const bRun = b.status === "running" ? 1 : 0;
+          if (aRun !== bRun) return aRun - bRun;
+          return a.name.localeCompare(b.name);
+        }
+        case "name-asc":
+          return a.name.localeCompare(b.name);
+        case "name-desc":
+          return b.name.localeCompare(a.name);
+        case "cpu-desc": {
+          const diff = (b.cpu || 0) - (a.cpu || 0);
+          return diff !== 0 ? diff : a.name.localeCompare(b.name);
+        }
+        case "cpu-asc": {
+          const diff = (a.cpu || 0) - (b.cpu || 0);
+          return diff !== 0 ? diff : a.name.localeCompare(b.name);
+        }
+        case "memory-desc": {
+          const diff = (b.memory || 0) - (a.memory || 0);
+          return diff !== 0 ? diff : a.name.localeCompare(b.name);
+        }
+        case "memory-asc": {
+          const diff = (a.memory || 0) - (b.memory || 0);
+          return diff !== 0 ? diff : a.name.localeCompare(b.name);
+        }
+        case "created-desc": {
+          const aTime = a.created ? new Date(a.created).getTime() : 0;
+          const bTime = b.created ? new Date(b.created).getTime() : 0;
+          return bTime - aTime;
+        }
+        case "created-asc": {
+          const aTime = a.created ? new Date(a.created).getTime() : 0;
+          const bTime = b.created ? new Date(b.created).getTime() : 0;
+          return aTime - bTime;
+        }
+        case "id-asc":
+          return a.id.localeCompare(b.id);
+        case "id-desc":
+          return b.id.localeCompare(a.id);
+        default:
+          return 0;
+      }
+    });
+
+    return sorted;
+  }, [data.containers, statusFilter, containersSearch, sortOption]);
 
   const [containersRef, containersHasScrollbar] = useHasScrollbar<HTMLDivElement>([
-    data.containers,
-    containersSearch,
+    filteredAndSortedContainers,
   ]);
-
-  const filteredContainers = (data.containers || []).filter((container) =>
-    container.name.toLowerCase().includes(containersSearch.toLowerCase())
-  );
 
   const {
     visibleItems: visibleContainers,
     handleScroll: handleContainersScroll,
-  } = useInfiniteScroll(filteredContainers, INITIAL_LIST_COUNT, LIST_INCREMENT);
+  } = useInfiniteScroll(filteredAndSortedContainers, INITIAL_LIST_COUNT, LIST_INCREMENT);
 
   useEffect(() => {
     auth.getUsername().then((name) => {
@@ -144,14 +234,19 @@ const Metrics = () => {
           <SearchableList
             title="Container Workloads"
             visibleCount={visibleContainers.length}
-            totalCount={filteredContainers.length}
+            totalCount={filteredAndSortedContainers.length}
             searchValue={containersSearch}
             onSearchChange={setContainersSearch}
-            placeholder="Filter containers by name..."
+            placeholder="Search by name, image, or ID..."
             listRef={containersRef}
             hasScrollbar={containersHasScrollbar}
             onScroll={handleContainersScroll}
             isEmpty={visibleContainers.length === 0}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            statusCounts={statusCounts}
+            sortOption={sortOption}
+            onSortChange={setSortOption}
             extraActions={
               <Button
                 variant="outline"

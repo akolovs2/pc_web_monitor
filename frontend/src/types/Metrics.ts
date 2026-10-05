@@ -68,6 +68,11 @@ export interface SearchableListProps {
     children: ReactNode;
     isEmpty: boolean;
     extraActions?: ReactNode;
+    statusFilter?: ContainerStatusFilter;
+    onStatusFilterChange?: (filter: ContainerStatusFilter) => void;
+    statusCounts?: { all: number; running: number; stopped: number };
+    sortOption?: ContainerSortOption;
+    onSortChange?: (option: ContainerSortOption) => void;
 }
 
 export interface Container {
@@ -79,7 +84,24 @@ export interface Container {
     memory: number;
     memory_usage: number;
     memory_limit: number;
+    created?: string;
 }
+
+export type ContainerSortOption =
+    | 'status-desc'
+    | 'status-asc'
+    | 'name-asc'
+    | 'name-desc'
+    | 'cpu-desc'
+    | 'cpu-asc'
+    | 'memory-desc'
+    | 'memory-asc'
+    | 'created-desc'
+    | 'created-asc'
+    | 'id-asc'
+    | 'id-desc';
+
+export type ContainerStatusFilter = 'all' | 'running' | 'stopped';
 
 export type ContainerActionType = 'start' | 'stop' | 'restart' | 'remove' | 'delete';
 

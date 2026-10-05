@@ -54,6 +54,7 @@ class DockerRuntime(IContainerRuntime):
                         pass
 
                 tag = c.image.tags[0] if c.image.tags else "unknown"
+                created_ts = c.attrs.get("Created", "") if hasattr(c, "attrs") and c.attrs else ""
                 containers.append(
                     ContainerInfo(
                         id=c.short_id,
@@ -64,6 +65,7 @@ class DockerRuntime(IContainerRuntime):
                         memory=mem_percent,
                         memory_usage=mem_usage,
                         memory_limit=mem_limit,
+                        created=created_ts,
                     )
                 )
             return containers

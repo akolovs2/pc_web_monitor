@@ -30,6 +30,7 @@ class ContainerInfo:
     memory: float
     memory_usage: int
     memory_limit: int
+    created: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -41,6 +42,7 @@ class ContainerInfo:
             "memory": self.memory,
             "memory_usage": self.memory_usage,
             "memory_limit": self.memory_limit,
+            "created": self.created,
         }
 
 
