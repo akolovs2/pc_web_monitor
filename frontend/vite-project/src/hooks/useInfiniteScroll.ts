@@ -1,11 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 const useInfiniteScroll = <T,>(items: T[], initialCount = 10, increment = 10) => {
     const [visibleCount, setVisibleCount] = useState(initialCount);
+    const [prevLength, setPrevLength] = useState(items.length);
 
-    useEffect(() => {
+    if (items.length !== prevLength) {
+        setPrevLength(items.length);
         setVisibleCount(initialCount);
-    }, [items.length, initialCount]);
+    }
 
     const loadMore = useCallback(() => {
         setVisibleCount(prev => Math.min(prev + increment, items.length));

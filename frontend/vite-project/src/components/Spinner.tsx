@@ -1,11 +1,19 @@
-import '../styles/ui.css';
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-interface SpinnerProps {
-    size?: 'sm' | 'md' | 'lg';
+export interface SpinnerProps {
+  size?: "sm" | "md" | "lg";
+  className?: string;
 }
 
-const Spinner = ({ size = 'md' }: SpinnerProps) => (
-    <span className={`spinner spinner-${size}`} />
+const sizeMap = {
+  sm: "h-4 w-4",
+  md: "h-5 w-5",
+  lg: "h-8 w-8",
+};
+
+const Spinner = ({ size = "md", className }: SpinnerProps) => (
+  <Loader2 className={cn("animate-spin text-muted-foreground", sizeMap[size], className)} />
 );
 
 export default Spinner;

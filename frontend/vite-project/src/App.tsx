@@ -4,7 +4,6 @@ import Metrics from './pages/Metrics';
 import ProtectedRoute from './features/auth/ProtectedRoute';
 import GuestRoute from './features/auth/GuestRoute';
 import NotFound from './pages/NotFound';
-import './styles/App.css';
 
 function App() {
     return (

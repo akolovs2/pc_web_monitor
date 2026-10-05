@@ -1,36 +1,51 @@
-import '../styles/ui.css';
+import React from "react";
+import { Progress } from "./ui/progress";
+import { cn } from "@/lib/utils";
 
-interface ProgressBarProps {
-    value: number;
-    color?: string;
-    showLabel?: boolean;
-    size?: 'sm' | 'md' | 'lg';
+export interface ProgressBarProps {
+  value: number;
+  color?: string;
+  showLabel?: boolean;
+  size?: "sm" | "md" | "lg";
+  className?: string;
 }
 
-const getDefaultColor = (value: number): string => {
-    if (value < 50) return '#4caf50';
-    if (value < 80) return '#ff9800';
-    return '#f44336';
+const getDefaultIndicatorClass = (value: number): string => {
+  if (value < 60) return "bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]";
+  if (value < 85) return "bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.4)]";
+  return "bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.4)]";
 };
 
-const ProgressBar = ({ 
-    value, 
-    color, 
-    showLabel = false,
-    size = 'md' 
-}: ProgressBarProps) => (
-    <div className="progress-wrapper">
-        <div className={`progress-container progress-${size}`}>
-            <div 
-                className="progress-bar" 
-                style={{ 
-                    width: `${Math.min(value, 100)}%`,
-                    backgroundColor: color || getDefaultColor(value)
-                }}
-            />
-        </div>
-        {showLabel && <span className="progress-label">{value.toFixed(1)}%</span>}
+const sizeClasses = {
+  sm: "h-1.5",
+  md: "h-2.5",
+  lg: "h-4",
+};
+
+const ProgressBar = ({
+  value,
+  color,
+  showLabel = false,
+  size = "md",
+  className,
+}: ProgressBarProps) => {
+  const clampedValue = Math.min(Math.max(value, 0), 100);
+
+  return (
+    <div className={cn("w-full space-y-1.5", className)}>
+      <Progress
+        value={clampedValue}
+        className={cn("bg-secondary/70 border border-border/40", sizeClasses[size])}
+        indicatorClassName={color ? "" : getDefaultIndicatorClass(clampedValue)}
+        style={color ? ({ "--custom-color": color } as React.CSSProperties) : undefined}
+      />
+      {showLabel && (
+        <span className="block text-xs font-mono font-medium text-muted-foreground text-right">
+          {clampedValue.toFixed(1)}%
+        </span>
+      )}
     </div>
-);
+  );
+};
 
 export default ProgressBar;

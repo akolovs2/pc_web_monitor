@@ -1,21 +1,32 @@
-import type { InputHTMLAttributes } from 'react';
-import '../styles/ui.css';
+import React from "react";
+import { Input as ShadcnInput, type InputProps as ShadcnInputProps } from "./ui/input";
+import { Label } from "./ui/label";
+import { cn } from "@/lib/utils";
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-    label?: string;
-    error?: string;
+export interface InputProps extends Omit<ShadcnInputProps, "error"> {
+  label?: string;
+  error?: string;
 }
 
-const Input = ({ label, error, id, className = '', ...props }: InputProps) => (
-    <div className="form-group">
-        {label && <label htmlFor={id}>{label}</label>}
-        <input 
-            id={id}
-            className={`input ${error ? 'input-error' : ''} ${className}`}
-            {...props}
-        />
-        {error && <span className="error-text">{error}</span>}
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ label, error, id, className, ...props }, ref) => (
+    <div className="space-y-1.5 text-left w-full">
+      {label && (
+        <Label htmlFor={id} className={cn(error && "text-destructive")}>
+          {label}
+        </Label>
+      )}
+      <ShadcnInput
+        id={id}
+        ref={ref}
+        error={!!error}
+        className={cn("bg-background/80 border-input transition-all focus-visible:ring-primary", className)}
+        {...props}
+      />
+      {error && <p className="text-xs font-medium text-destructive mt-1">{error}</p>}
     </div>
+  )
 );
+Input.displayName = "Input";
 
 export default Input;
