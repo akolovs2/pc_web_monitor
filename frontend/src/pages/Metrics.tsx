@@ -7,7 +7,7 @@ import SearchableList from "../features/dashboard/SearchableList";
 import ContainerItem from "../features/dashboard/ContainerItem";
 import { INITIAL_LIST_COUNT, LIST_INCREMENT } from "../config";
 import { auth } from "../services/auth";
-import { Button, Badge } from "../components";
+import { Button, Badge, MetricsHistoryCard } from "../components";
 import { Server, LogOut, User, Activity } from "lucide-react";
 
 const Metrics = () => {
@@ -112,8 +112,13 @@ const Metrics = () => {
           </div>
         </section>
 
+        {/* Historical Trends Chart Section */}
+        <section className="pt-1">
+          <MetricsHistoryCard />
+        </section>
+
         {/* Containers List Section */}
-        <section className="pt-2">
+        <section className="pt-1">
           <SearchableList
             title="Docker Containers"
             visibleCount={visibleContainers.length}

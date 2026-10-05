@@ -12,3 +12,6 @@ export * from "./ui/badge";
 export * from "./ui/label";
 export * from "./ui/dialog";
 export { default as ConfirmDialog } from "./Dialog";
+
+// Custom charts
+export * from "./chart";

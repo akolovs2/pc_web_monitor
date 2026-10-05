@@ -23,4 +23,26 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
     return res;
 }
 
+export interface MetricHistoryRecord {
+    id?: number;
+    timestamp: string;
+    cpu: number;
+    ram: number;
+    storage: number;
+    storage_used?: number;
+    storage_total?: number;
+    containers_count?: number;
+    running_containers?: number;
+}
+
+export async function fetchMetricsHistory(range: string = "24h"): Promise<MetricHistoryRecord[]> {
+    try {
+        const res = await fetchWithAuth(`/metrics/history?range=${range}`);
+        if (!res.ok) return [];
+        return await res.json();
+    } catch {
+        return [];
+    }
+}
+
 export default fetchWithAuth;
