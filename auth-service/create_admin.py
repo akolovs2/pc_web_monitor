@@ -1,11 +1,14 @@
 import asyncio
 from app.models.database import database, init_db
 from app.services.auth_service import hash_password
+import dotenv
+
+dotenv.load_dotenv()
 
 async def create_admin():
     await init_db()
 
-    password_hash = hash_password("TyuT9CjW")  # Master admin initial pwd.
+    password_hash = hash_password(os.getenv("INIT_HASH_PASSWORD"))  # Master admin initial pwd.
 
     try:
         await database.execute(
