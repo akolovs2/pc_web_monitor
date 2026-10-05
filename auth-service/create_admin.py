@@ -1,3 +1,4 @@
+import os
 import asyncio
 from app.models.database import database, init_db
 from app.services.auth_service import hash_password
