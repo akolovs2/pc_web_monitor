@@ -265,10 +265,11 @@ const Login = () => {
             <Button
               type="submit"
               loading={loading}
+              loadingText="Authenticating..."
               className="w-full h-8.5 mt-2 text-xs font-mono font-medium tracking-wide uppercase"
             >
-              <Lock className="h-3.5 w-3.5 mr-1.5" />
-              Authenticate
+              <Lock className="h-3.5 w-3.5" />
+              <span>Authenticate</span>
             </Button>
           </form>
 

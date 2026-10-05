@@ -42,11 +42,40 @@ export interface ButtonProps
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   loading?: boolean;
+  loadingText?: React.ReactNode;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, loading, disabled, children, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, loading, loadingText, disabled, children, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
+
+    const renderLoadingContent = () => {
+      if (loadingText) {
+        return (
+          <>
+            <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+            <span className="truncate">{loadingText}</span>
+          </>
+        );
+      }
+
+      if (typeof children === "string") {
+        return (
+          <>
+            <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+            <span className="truncate">{children}</span>
+          </>
+        );
+      }
+
+      return (
+        <>
+          <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+          <span className="truncate">Loading...</span>
+        </>
+      );
+    };
+
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
@@ -54,14 +83,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || loading}
         {...props}
       >
-        {loading ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>{typeof children === "string" ? "Loading..." : children}</span>
-          </>
-        ) : (
-          children
-        )}
+        {loading ? renderLoadingContent() : children}
       </Comp>
     );
   }
