@@ -25,16 +25,53 @@ export interface MetricLineChartProps {
   emptyText?: string;
 }
 
-function formatTimestamp(ts: string | number | Date): string {
+function formatAxisTimestamp(ts: string | number | Date, spanMs: number): string {
   const d = new Date(ts);
   if (isNaN(d.getTime())) return "";
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+  // Multi-day span (> 3 days, e.g. 7d or 14d): "Oct 6"
+  if (spanMs > 3 * 24 * 3600 * 1000) {
+    return d.toLocaleDateString([], { month: "short", day: "numeric" });
+  }
+
+  // Multi-day span (1-3 days): "10/06 21:30"
+  if (spanMs > 24 * 3600 * 1000) {
+    const mo = d.getMonth() + 1;
+    const day = d.getDate();
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return `${mo}/${day} ${hh}:${mm}`;
+  }
+
+  // Short span (< 3 minutes): show seconds "21:30:10"
+  if (spanMs < 3 * 60 * 1000) {
+    return d.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+  }
+
+  // Standard intra-day: compact 24-hour "21:30"
+  return d.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }
 
-function formatDate(ts: string | number | Date): string {
+function formatTooltipDateTime(ts: string | number | Date): string {
   const d = new Date(ts);
   if (isNaN(d.getTime())) return "";
-  return d.toLocaleDateString([], { month: "short", day: "numeric" });
+  const dateStr = d.toLocaleDateString([], { month: "short", day: "numeric" });
+  const timeStr = d.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+  return `${dateStr} ${timeStr}`;
 }
 
 export const MetricLineChart: React.FC<MetricLineChartProps> = ({
@@ -133,25 +170,98 @@ export const MetricLineChart: React.FC<MetricLineChartProps> = ({
   // X-axis time marks
   const xLabels = useMemo(() => {
     if (data.length < 2) return [];
-    const minLabelPx = 60;
-    const maxLabels = Math.max(2, Math.floor((containerW || 600) / minLabelPx));
-    const step = Math.max(1, Math.floor((data.length - 1) / (maxLabels - 1)));
 
-    const indices: number[] = [0];
-    for (let i = step; i < data.length - 1; i += step) {
-      indices.push(i);
+    const firstTs = new Date(data[0].timestamp).getTime();
+    const lastTs = new Date(data[data.length - 1].timestamp).getTime();
+    const spanMs = Math.max(0, lastTs - firstTs);
+
+    // Calculate actual pixel width of chart plotting area
+    const chartDisplayW = containerW > 0 ? (chartW / W) * containerW : 600;
+
+    // Minimum distance between labels to guarantee zero overlap (in CSS px)
+    const MIN_LABEL_GAP_PX = 95;
+
+    // Determine safe maximum number of labels that can fit
+    const maxLabels = Math.max(2, Math.min(6, Math.floor(chartDisplayW / MIN_LABEL_GAP_PX)));
+    const targetCount = Math.min(data.length, maxLabels);
+
+    if (targetCount <= 2) {
+      const firstPt = data[0];
+      const lastPt = data[data.length - 1];
+      return [
+        {
+          x: xOf(0),
+          label: formatAxisTimestamp(firstPt.timestamp, spanMs),
+        },
+        {
+          x: xOf(data.length - 1),
+          label: formatAxisTimestamp(lastPt.timestamp, spanMs),
+        },
+      ];
     }
-    indices.push(data.length - 1);
 
-    return indices.map((idx) => {
+    // Pick targetCount evenly distributed candidate indices across data
+    const candidateIndices: number[] = [];
+    for (let k = 0; k < targetCount; k++) {
+      const idx = Math.round((k / (targetCount - 1)) * (data.length - 1));
+      if (!candidateIndices.includes(idx)) {
+        candidateIndices.push(idx);
+      }
+    }
+
+    // Map candidate indices to screen positions and formatted text
+    const candidateLabels = candidateIndices.map((idx) => {
       const pt = data[idx];
+      const x = xOf(idx);
+      const screenX = (x / W) * (containerW || W);
       return {
-        x: xOf(idx),
-        label: formatTimestamp(pt.timestamp),
-        date: formatDate(pt.timestamp),
+        x,
+        screenX,
+        label: formatAxisTimestamp(pt.timestamp, spanMs),
       };
     });
-  }, [data, xOf, containerW]);
+
+    // Collision filter: omit intermediate labels if too close or duplicate text
+    const finalLabels: { x: number; label: string }[] = [];
+    for (let i = 0; i < candidateLabels.length; i++) {
+      const curr = candidateLabels[i];
+      const isFirst = i === 0;
+      const isLast = i === candidateLabels.length - 1;
+
+      if (isFirst) {
+        finalLabels.push({ x: curr.x, label: curr.label });
+        continue;
+      }
+
+      const prevScreenX =
+        finalLabels.length > 0 ? (finalLabels[finalLabels.length - 1].x / W) * (containerW || W) : 0;
+      const prevLabel =
+        finalLabels.length > 0 ? finalLabels[finalLabels.length - 1].label : "";
+
+      if (isLast) {
+        // Guarantee the latest timestamp appears at the far right:
+        // if it clashes with the immediately previous label, drop the previous one
+        if (
+          finalLabels.length > 1 &&
+          (curr.screenX - prevScreenX < MIN_LABEL_GAP_PX || curr.label === prevLabel)
+        ) {
+          finalLabels.pop();
+        }
+        finalLabels.push({ x: curr.x, label: curr.label });
+        continue;
+      }
+
+      // Intermediate label: check distance and text uniqueness against previous accepted label
+      if (
+        curr.screenX - prevScreenX >= MIN_LABEL_GAP_PX &&
+        curr.label !== prevLabel
+      ) {
+        finalLabels.push({ x: curr.x, label: curr.label });
+      }
+    }
+
+    return finalLabels;
+  }, [data, xOf, containerW, chartW]);
 
   const resolvePoint = useCallback(
     (clientX: number, rect: DOMRect) => {
@@ -257,7 +367,7 @@ export const MetricLineChart: React.FC<MetricLineChartProps> = ({
         return (
           <div
             key={idx}
-            className="pointer-events-none absolute select-none font-mono text-[10px] text-muted-foreground/60"
+            className="pointer-events-none absolute select-none font-mono text-[9px] sm:text-[10px] tabular-nums text-muted-foreground/60"
             style={{
               left: `${(x / W) * 100}%`,
               bottom: 8,
@@ -306,8 +416,8 @@ export const MetricLineChart: React.FC<MetricLineChartProps> = ({
                 {defaultFormatter(activeVal)}
               </span>
             </div>
-            <p className="mt-1 text-[10px] font-mono text-muted-foreground/75">
-              {formatDate(activePt.timestamp)} {formatTimestamp(activePt.timestamp)}
+            <p className="mt-1 text-[10px] font-mono tabular-nums text-muted-foreground/75">
+              {formatTooltipDateTime(activePt.timestamp)}
             </p>
           </div>
         </div>
