@@ -66,8 +66,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             <DialogHeader className="text-left">
               <DialogTitle className="text-lg font-bold">{title}</DialogTitle>
               {description && (
-                <DialogDescription className="text-sm text-muted-foreground pt-1">
-                  {description}
+                <DialogDescription asChild className="text-sm text-muted-foreground pt-1">
+                  <div>{description}</div>
                 </DialogDescription>
               )}
             </DialogHeader>

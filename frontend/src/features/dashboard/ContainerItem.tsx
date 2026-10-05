@@ -142,16 +142,18 @@ const ContainerItem = ({ name, status, cpu, memory, onAction }: ContainerItemPro
         onOpenChange={setShowDeleteDialog}
         title="Delete Container"
         description={
-          <div>
-            <span>Are you sure you want to delete container </span>
-            <span className="font-mono font-semibold text-foreground bg-secondary/80 px-1.5 py-0.5 rounded text-xs">
-              {name}
-            </span>
-            <span>? This action cannot be undone.</span>
+          <div className="space-y-2">
+            <div>
+              Are you sure you want to delete container{" "}
+              <span className="font-mono font-semibold text-foreground bg-secondary/80 px-1.5 py-0.5 rounded text-xs">
+                {name}
+              </span>
+              ? This action cannot be undone.
+            </div>
             {isRunning && (
-              <p className="mt-2 text-xs text-rose-400 font-medium">
+              <div className="text-xs text-rose-400 font-medium">
                 Note: Container is running and will be stopped and deleted.
-              </p>
+              </div>
             )}
           </div>
         }
