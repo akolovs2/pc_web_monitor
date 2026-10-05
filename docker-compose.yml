@@ -26,24 +26,6 @@ services:
       - "8080:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      - auth-service
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
-
-  auth-service:
-    build:
-      context: ./auth-service
-      dockerfile: Dockerfile
-      network: host
-    environment:
-      - JWT_SECRET=${JWT_SECRET}
-      - SECURE_COOKIES=${SECURE_COOKIES:-false}
-      - CORS_ORIGINS=${CORS_ORIGINS}
-    volumes:
-      - auth_db:/app/data
-    restart: unless-stopped
-
-volumes:
-  auth_db:

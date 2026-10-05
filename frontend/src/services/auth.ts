@@ -1,33 +1,66 @@
 import { API_URL } from '../config';
 
-//console.log('API_URL:', API_URL);
+export interface LoginParams {
+    username: string;
+    password?: string;
+    sshKey?: string;
+    passphrase?: string;
+}
 
 export const auth = {
-    async login(username: string, password: string) {
+    async login({ username, password, sshKey, passphrase }: LoginParams) {
+        const payload: {
+            username: string;
+            password?: string;
+            ssh_key?: string;
+            passphrase?: string;
+            auth_type: 'password' | 'ssh_key';
+        } = {
+            username: username.trim(),
+            auth_type: sshKey ? 'ssh_key' : 'password',
+        };
+
+        if (password) payload.password = password;
+        if (sshKey) payload.ssh_key = sshKey;
+        if (passphrase) payload.passphrase = passphrase;
+
         const res = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify(payload)
         });
-        if (!res.ok) throw new Error('Invalid credentials');
+
+        if (!res.ok) {
+            const errorData = await res.json().catch(() => null);
+            const message = errorData?.detail || 'Authentication failed. Please verify your credentials.';
+            throw new Error(message);
+        }
+
         return res.json();
     },
 
     async refresh() {
-        const res = await fetch(`${API_URL}/auth/refresh`, {
-            method: 'POST',
-            credentials: 'include'
-        });
-        return res.ok;
+        try {
+            const res = await fetch(`${API_URL}/auth/refresh`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            return res.ok;
+        } catch {
+            return false;
+        }
     },
 
     async logout() {
-        await fetch(`${API_URL}/auth/logout`, {
-            method: 'POST',
-            credentials: 'include'
-        });
-        window.location.href = '/login';
+        try {
+            await fetch(`${API_URL}/auth/logout`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+        } finally {
+            window.location.href = '/login';
+        }
     },
 
     async check() {

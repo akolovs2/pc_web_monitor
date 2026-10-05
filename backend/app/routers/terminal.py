@@ -95,6 +95,9 @@ async def terminal_websocket(websocket: WebSocket):
     env["USER"] = username
     shell = env.get("SHELL", "/bin/bash")
 
+    user_home = os.path.expanduser(f"~{username}")
+    cwd = user_home if os.path.isdir(user_home) else os.path.expanduser("~")
+
     # Spawn shell in new session
     proc = subprocess.Popen(
         [shell, "-l"],
@@ -104,7 +107,7 @@ async def terminal_websocket(websocket: WebSocket):
         preexec_fn=os.setsid,
         close_fds=True,
         env=env,
-        cwd=os.path.expanduser("~")
+        cwd=cwd
     )
     os.close(slave_fd)
 

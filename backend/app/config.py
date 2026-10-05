@@ -13,8 +13,10 @@ class Config:
     TASKS_UPDATE_INTERVAL = 5
     MAX_TASKS = 50
 
-    JWT_SECRET = os.getenv("JWT_SECRET")
+    JWT_SECRET = os.getenv("JWT_SECRET", "homelab-pc-web-monitor-default-secret-key-change-in-env")
     SECURE_COOKIES = os.getenv("SECURE_COOKIES", "false").lower() == "true"
+    SSH_HOST = os.getenv("SSH_HOST", "127.0.0.1")
+    SSH_PORT = int(os.getenv("SSH_PORT", 22))
 
     CORS_ORIGINS = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "").split(",") if origin.strip()]
     HIDDEN_CONTAINERS = [name.strip() for name in os.getenv("HIDDEN_CONTAINERS", "pc_web_monitor-").split(",") if name.strip()]
