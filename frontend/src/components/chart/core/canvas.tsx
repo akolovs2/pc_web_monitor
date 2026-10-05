@@ -17,7 +17,7 @@ interface Props {
   gridStroke?: string;
 }
 
-export const ChartCanvas: React.FC<Props> = ({
+export const ChartCanvas: React.FC<Props> = React.memo(({
   id,
   linePath,
   areaPath,
@@ -108,6 +108,8 @@ export const ChartCanvas: React.FC<Props> = ({
       </svg>
     </div>
   );
-};
+});
+
+ChartCanvas.displayName = "ChartCanvas";
 
 export default ChartCanvas;

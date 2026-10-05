@@ -1,3 +1,4 @@
+import React from "react";
 import type { ProgressCardProps } from "../../types/Metrics";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { ProgressBar } from "../../components";
@@ -13,7 +14,7 @@ const getCardIcon = (title: string) => {
   return <Activity className="h-4 w-4 text-emerald-400" />;
 };
 
-const ProgressCard = ({ title, value, subtitle, extraInfo }: ProgressCardProps) => {
+const ProgressCard = React.memo(({ title, value, subtitle, extraInfo }: ProgressCardProps) => {
   const formattedValue = (value || 0).toFixed(1);
   const displayLabel = extraInfo || subtitle || "Real-time load";
 
@@ -43,6 +44,8 @@ const ProgressCard = ({ title, value, subtitle, extraInfo }: ProgressCardProps) 
       </CardContent>
     </Card>
   );
-};
+});
+
+ProgressCard.displayName = "ProgressCard";
 
 export default ProgressCard;

@@ -74,7 +74,7 @@ function formatTooltipDateTime(ts: string | number | Date): string {
   return `${dateStr} ${timeStr}`;
 }
 
-export const MetricLineChart: React.FC<MetricLineChartProps> = ({
+export const MetricLineChart: React.FC<MetricLineChartProps> = React.memo(({
   id = "metric-chart",
   data,
   label = "Metric",
@@ -424,6 +424,8 @@ export const MetricLineChart: React.FC<MetricLineChartProps> = ({
       )}
     </div>
   );
-};
+});
+
+MetricLineChart.displayName = "MetricLineChart";
 
 export default MetricLineChart;

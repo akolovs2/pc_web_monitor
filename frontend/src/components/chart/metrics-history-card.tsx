@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -73,30 +73,59 @@ const TIME_RANGES: { key: TimeRange; label: string }[] = [
   { key: "14d", label: "14d" },
 ];
 
-export const MetricsHistoryCard: React.FC = () => {
+/**
+ * Fast equality check to prevent re-rendering when new records haven't changed.
+ */
+function isHistoryEqual(
+  a: MetricHistoryRecord[],
+  b: MetricHistoryRecord[]
+): boolean {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  if (a.length === 0) return true;
+  const lastA = a[a.length - 1];
+  const lastB = b[b.length - 1];
+  if (
+    lastA.timestamp !== lastB.timestamp ||
+    lastA.cpu !== lastB.cpu ||
+    lastA.ram !== lastB.ram ||
+    lastA.storage !== lastB.storage ||
+    lastA.running_containers !== lastB.running_containers
+  ) {
+    return false;
+  }
+  return a[0].timestamp === b[0].timestamp;
+}
+
+export const MetricsHistoryCard: React.FC = React.memo(() => {
   const [selectedMetric, setSelectedMetric] = useState<MetricKey>("cpu");
   const [selectedRange, setSelectedRange] = useState<TimeRange>("24h");
   const [historyData, setHistoryData] = useState<MetricHistoryRecord[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const loadHistory = useCallback(async (range: TimeRange) => {
-    setLoading(true);
+  const loadHistory = useCallback(async (range: TimeRange, silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const records = await fetchMetricsHistory(range);
-      setHistoryData(records || []);
+      setHistoryData((prev) =>
+        isHistoryEqual(prev, records || []) ? prev : (records || [])
+      );
     } catch {
-      setHistoryData([]);
+      if (!silent) setHistoryData([]);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadHistory(selectedRange);
-    // Auto-refresh historical trends every 60 seconds
+    // Initial fetch on mount or range switch (with loading state)
+    loadHistory(selectedRange, false);
+
+    // Auto-refresh historical trends silently every 10 seconds
     const interval = setInterval(() => {
-      loadHistory(selectedRange);
-    }, 60000);
+      loadHistory(selectedRange, true);
+    }, 10000);
+
     return () => clearInterval(interval);
   }, [selectedRange, loadHistory]);
 
@@ -162,10 +191,19 @@ export const MetricsHistoryCard: React.FC = () => {
               ))}
             </div>
 
+            {/* Auto-refresh interval indicator */}
+            <div
+              className="hidden sm:inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-secondary/30 border border-border/40 text-[10px] font-mono text-muted-foreground"
+              title="Auto-refreshing every 10 seconds"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>10s</span>
+            </div>
+
             <Button
               variant="outline"
               size="icon"
-              onClick={() => loadHistory(selectedRange)}
+              onClick={() => loadHistory(selectedRange, false)}
               disabled={loading}
               className="h-8 w-8 text-muted-foreground hover:text-foreground"
               title="Refresh History"
@@ -248,6 +286,8 @@ export const MetricsHistoryCard: React.FC = () => {
       </CardContent>
     </Card>
   );
-};
+});
+
+MetricsHistoryCard.displayName = "MetricsHistoryCard";
 
 export default MetricsHistoryCard;

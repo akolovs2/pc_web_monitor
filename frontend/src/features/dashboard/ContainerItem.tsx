@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import type { ContainerItemProps, ContainerActionType } from "../../types/Metrics";
 import { Button, Badge, Spinner, ConfirmDialog } from "../../components";
 import { Play, Square, RotateCw, Trash2, Box, Cpu, Database } from "lucide-react";
 
-const ContainerItem = ({ name, status, cpu, memory, onAction }: ContainerItemProps) => {
+const ContainerItem = React.memo(({ name, status, cpu, memory, onAction }: ContainerItemProps) => {
   const [loading, setLoading] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [prevStatus, setPrevStatus] = useState(status);
@@ -168,6 +168,8 @@ const ContainerItem = ({ name, status, cpu, memory, onAction }: ContainerItemPro
       />
     </>
   );
-};
+});
+
+ContainerItem.displayName = "ContainerItem";
 
 export default ContainerItem;
