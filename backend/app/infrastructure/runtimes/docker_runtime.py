@@ -92,6 +92,17 @@ class DockerRuntime(IContainerRuntime):
                 container.remove(force=True)
                 return ContainerActionResult(success=True, message="Container deleted successfully")
 
+            if action == "kill":
+                container.kill()
+                return ContainerActionResult(success=True, message="Container killed successfully")
+
+            if action == "stop":
+                try:
+                    container.stop(timeout=3)
+                except Exception:
+                    container.kill()
+                return ContainerActionResult(success=True, message="Container stopped successfully")
+
             if hasattr(container, action):
                 getattr(container, action)()
                 return ContainerActionResult(success=True, message=f"{action.capitalize()} completed successfully")
@@ -297,3 +308,16 @@ class DockerRuntime(IContainerRuntime):
             return ContainerActionResult(success=False, message=msg)
         except Exception as e:
             return ContainerActionResult(success=False, message=f"Rename failed: {str(e)}")
+
+    def get_container_logs(self, name: str, tail: int = 100) -> str:
+        if not self._client:
+            return "Docker daemon unavailable"
+        try:
+            c = self._client.containers.get(name)
+            raw = c.logs(tail=tail, stdout=True, stderr=True)
+            return raw.decode("utf-8", errors="replace")
+        except docker.errors.NotFound:
+            return f"Container '{name}' not found"
+        except Exception as e:
+            return f"Failed to fetch logs: {str(e)}"
+

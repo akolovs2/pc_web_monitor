@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -30,7 +30,10 @@ import {
   AlertCircle,
   CheckCircle2,
   Info,
+  Terminal,
+  AlertTriangle,
 } from "lucide-react";
+import { fetchWithAuth } from "../../services/api";
 
 interface ManageContainerDialogProps {
   containerName: string | null;
@@ -51,9 +54,11 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
   onRecreate,
   onAction,
 }) => {
-  const [activeTab, setActiveTab] = useState<"overview" | "edit">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "edit" | "logs">("overview");
   const [details, setDetails] = useState<ContainerDetails | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [logs, setLogs] = useState<string>("");
+  const [loadingLogs, setLoadingLogs] = useState(false);
 
   // Edit / Recreate form state
   const [image, setImage] = useState("");
@@ -171,7 +176,31 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
   const handleAddVolume = () => setVolumes((prev) => [...prev, { host: "", container: "" }]);
   const handleRemoveVolume = (idx: number) => setVolumes((prev) => prev.filter((_, i) => i !== idx));
 
-  // Quick Lifecycle Action (Start/Stop/Restart)
+  const fetchLogs = useCallback(async () => {
+    if (!containerName) return;
+    setLoadingLogs(true);
+    try {
+      const res = await fetchWithAuth(`/docker/containers/${containerName}/logs?tail=150`);
+      if (res.ok) {
+        const data = await res.json();
+        setLogs(data.logs || "No logs available");
+      } else {
+        setLogs(`Failed to fetch logs: HTTP ${res.status}`);
+      }
+    } catch (err: unknown) {
+      setLogs(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setLoadingLogs(false);
+    }
+  }, [containerName]);
+
+  useEffect(() => {
+    if (activeTab === "logs" && open && containerName) {
+      fetchLogs();
+    }
+  }, [activeTab, open, containerName, fetchLogs]);
+
+  // Quick Lifecycle Action (Start/Stop/Restart/Kill)
   const handleQuickAction = async (action: ContainerActionType) => {
     if (!containerName) return;
     setActionLoading(action);
@@ -279,6 +308,19 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
   };
 
   const isRunning = details?.status === "running";
+  const isRestarting = details?.status === "restarting";
+
+  const statusBadgeClass = isRunning
+    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+    : isRestarting
+    ? "bg-amber-500/15 text-amber-300 border-amber-500/40"
+    : "bg-secondary text-muted-foreground border-border";
+
+  const dotColorClass = isRunning
+    ? "bg-emerald-400"
+    : isRestarting
+    ? "bg-amber-400 animate-pulse"
+    : "bg-slate-400";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -297,12 +339,9 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
                   </DialogTitle>
                   {details && (
                     <span
-                      className={`text-[10px] font-mono uppercase px-1.5 py-0.5 rounded border ${
-                        isRunning
-                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                          : "bg-secondary text-muted-foreground border-border"
-                      }`}
+                      className={`text-[10px] font-mono uppercase px-1.5 py-0.5 rounded border flex items-center gap-1 ${statusBadgeClass}`}
                     >
+                      <span className={`h-1.5 w-1.5 rounded-full ${dotColorClass}`} />
                       {details.status}
                     </span>
                   )}
@@ -323,7 +362,7 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
                       size="sm"
                       onClick={() => handleQuickAction("stop")}
                       disabled={!!actionLoading}
-                      className="h-7 px-2 text-xs font-mono hover:text-destructive hover:border-destructive"
+                      className="h-7 px-2 text-xs font-mono hover:text-destructive hover:border-destructive cursor-pointer"
                       title="Stop container"
                     >
                       <Square className="h-3 w-3 fill-current mr-1" />
@@ -334,7 +373,42 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
                       size="sm"
                       onClick={() => handleQuickAction("restart")}
                       disabled={!!actionLoading}
-                      className="h-7 px-2 text-xs font-mono"
+                      className="h-7 px-2 text-xs font-mono cursor-pointer"
+                      title="Restart container"
+                    >
+                      <RotateCw className="h-3 w-3 mr-1" />
+                      Restart
+                    </Button>
+                  </>
+                ) : isRestarting ? (
+                  <>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleQuickAction("stop")}
+                      disabled={!!actionLoading}
+                      className="h-7 px-2 text-xs font-mono bg-rose-950/70 border border-rose-600/50 text-rose-300 hover:bg-rose-900 cursor-pointer"
+                      title="Stop crash loop"
+                    >
+                      <Square className="h-3 w-3 fill-current mr-1" />
+                      Stop
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleQuickAction("kill")}
+                      disabled={!!actionLoading}
+                      className="h-7 px-2 text-xs font-mono border-rose-500/50 text-rose-300 hover:bg-rose-950 cursor-pointer"
+                      title="Force kill container"
+                    >
+                      Kill
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleQuickAction("restart")}
+                      disabled={!!actionLoading}
+                      className="h-7 px-2 text-xs font-mono cursor-pointer"
                       title="Restart container"
                     >
                       <RotateCw className="h-3 w-3 mr-1" />
@@ -347,7 +421,7 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
                     size="sm"
                     onClick={() => handleQuickAction("start")}
                     disabled={!!actionLoading}
-                    className="h-7 px-2.5 text-xs font-mono"
+                    className="h-7 px-2.5 text-xs font-mono cursor-pointer"
                     title="Start container"
                   >
                     <Play className="h-3 w-3 fill-current mr-1" />
@@ -363,7 +437,7 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab("overview")}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-mono transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-mono transition-colors cursor-pointer ${
                 activeTab === "overview"
                   ? "bg-secondary text-foreground border border-border"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
@@ -374,8 +448,20 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
             </button>
             <button
               type="button"
+              onClick={() => setActiveTab("logs")}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-mono transition-colors cursor-pointer ${
+                activeTab === "logs"
+                  ? "bg-secondary text-foreground border border-border"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
+              }`}
+            >
+              <Terminal className="h-3.5 w-3.5 text-amber-400" />
+              Logs
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveTab("edit")}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-mono transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-mono transition-colors cursor-pointer ${
                 activeTab === "edit"
                   ? "bg-secondary text-foreground border border-border"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
@@ -415,6 +501,47 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
           ) : activeTab === "overview" ? (
             /* Tab 1: Overview & Controls */
             <div className="space-y-4">
+              {/* Crash Loop Warning Banner if container is restarting */}
+              {isRestarting && (
+                <div className="p-3 rounded border border-amber-500/40 bg-amber-950/30 text-amber-200 text-xs font-mono space-y-2">
+                  <div className="flex items-center gap-2 font-semibold text-amber-400">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+                    <span>Container is stuck in a crash-restart loop</span>
+                  </div>
+                  <p className="text-[11px] text-amber-300/80 leading-relaxed">
+                    The process inside the container exits immediately with an error upon launching. Docker restart policy keeps restarting it indefinitely.
+                  </p>
+                  <div className="flex items-center gap-2 pt-1 flex-wrap">
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleQuickAction("stop")}
+                      disabled={!!actionLoading}
+                      className="h-7 px-2.5 text-xs font-mono cursor-pointer"
+                    >
+                      <Square className="h-3 w-3 mr-1 fill-current" /> Stop Loop
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleQuickAction("kill")}
+                      disabled={!!actionLoading}
+                      className="h-7 px-2.5 text-xs font-mono border-rose-500/50 text-rose-300 hover:bg-rose-950 cursor-pointer"
+                    >
+                      Force Kill
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => setActiveTab("logs")}
+                      className="h-7 px-2.5 text-xs font-mono cursor-pointer"
+                    >
+                      <Terminal className="h-3 w-3 mr-1 text-amber-400" /> View Crash Logs
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Metadata Grid */}
               <div className="grid grid-cols-2 gap-2 text-xs font-mono">
                 <div className="p-2.5 rounded border border-border bg-secondary/20 space-y-1">
@@ -543,8 +670,32 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
                 </div>
               </div>
             </div>
+          ) : activeTab === "logs" ? (
+            /* Tab 2: Logs Viewer */
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-muted-foreground flex items-center gap-1.5">
+                  <Terminal className="h-3.5 w-3.5 text-amber-400" />
+                  Container Output (Tail 150)
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchLogs}
+                  disabled={loadingLogs}
+                  className="h-6 px-2 text-[11px] font-mono cursor-pointer"
+                >
+                  <RotateCw className={`h-3 w-3 mr-1 ${loadingLogs ? "animate-spin" : ""}`} />
+                  Refresh Logs
+                </Button>
+              </div>
+              <pre className="p-3 rounded bg-black/95 border border-border font-mono text-[11px] text-slate-200 overflow-x-auto max-h-[380px] whitespace-pre-wrap select-text leading-relaxed">
+                {loadingLogs ? "Loading logs from Docker daemon..." : logs || "No log output recorded for this container."}
+              </pre>
+            </div>
           ) : (
-            /* Tab 2: Edit & Recreate (Portainer Style) */
+            /* Tab 3: Edit & Recreate (Portainer Style) */
             <form id="recreate-form" onSubmit={handleRecreateSubmit} className="space-y-3.5">
               <div className="p-2.5 rounded border border-sky-500/20 bg-sky-950/20 text-xs font-mono text-sky-200 flex items-start gap-2">
                 <Info className="h-4 w-4 shrink-0 text-sky-400 mt-0.5" />

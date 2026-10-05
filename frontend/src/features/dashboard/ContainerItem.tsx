@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import type { ContainerItemProps, ContainerActionType } from "../../types/Metrics";
-import { Button, Badge, Spinner, ConfirmDialog } from "../../components";
+import { Button, Spinner, ConfirmDialog } from "../../components";
 import { Play, Square, RotateCw, Trash2, Box, Cpu, Database, Sliders } from "lucide-react";
 
 const ContainerItem = React.memo(({ name, status, cpu, memory, onAction, onManage }: ContainerItemProps) => {
@@ -47,6 +47,19 @@ const ContainerItem = React.memo(({ name, status, cpu, memory, onAction, onManag
   };
 
   const isRunning = status === "running";
+  const isRestarting = status === "restarting";
+
+  const statusBadgeClass = isRunning
+    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+    : isRestarting
+    ? "border-amber-500/40 bg-amber-500/15 text-amber-300"
+    : "border-border bg-secondary text-muted-foreground";
+
+  const dotColorClass = isRunning
+    ? "bg-emerald-400"
+    : isRestarting
+    ? "bg-amber-400 animate-pulse"
+    : "bg-slate-400";
 
   return (
     <>
@@ -57,6 +70,8 @@ const ContainerItem = React.memo(({ name, status, cpu, memory, onAction, onManag
             className={`flex items-center justify-center p-1.5 rounded border shrink-0 ${
               isRunning
                 ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                : isRestarting
+                ? "border-amber-500/40 bg-amber-500/15 text-amber-300"
                 : "border-border bg-secondary text-muted-foreground"
             }`}
           >
@@ -68,17 +83,12 @@ const ContainerItem = React.memo(({ name, status, cpu, memory, onAction, onManag
               <span className="font-mono font-semibold text-xs sm:text-sm text-foreground truncate" title={name}>
                 {name}
               </span>
-              <Badge
-                variant={isRunning ? "success" : "secondary"}
-                className="text-[9px] uppercase tracking-wider px-1.5 py-0"
+              <span
+                className={`text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded border flex items-center gap-1 ${statusBadgeClass}`}
               >
-                <span
-                  className={`h-1 w-1 rounded-full mr-0.5 ${
-                    isRunning ? "bg-emerald-400" : "bg-slate-400"
-                  }`}
-                />
+                <span className={`h-1.5 w-1.5 rounded-full ${dotColorClass}`} />
                 {status}
-              </Badge>
+              </span>
             </div>
 
             {isRunning && (
@@ -110,7 +120,7 @@ const ContainerItem = React.memo(({ name, status, cpu, memory, onAction, onManag
                     variant="outline"
                     size="sm"
                     onClick={() => handleAction("stop")}
-                    className="h-7 px-2 text-xs font-mono hover:border-destructive hover:text-destructive hover:bg-destructive/10"
+                    className="h-7 px-2 text-xs font-mono hover:border-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                   >
                     <Square className="h-3 w-3 mr-1 fill-current" />
                     Stop
@@ -119,7 +129,29 @@ const ContainerItem = React.memo(({ name, status, cpu, memory, onAction, onManag
                     variant="secondary"
                     size="sm"
                     onClick={() => handleAction("restart")}
-                    className="h-7 px-2 text-xs font-mono hover:bg-accent"
+                    className="h-7 px-2 text-xs font-mono hover:bg-accent cursor-pointer"
+                  >
+                    <RotateCw className="h-3 w-3 mr-1" />
+                    Restart
+                  </Button>
+                </>
+              ) : isRestarting ? (
+                <>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleAction("stop")}
+                    className="h-7 px-2.5 text-xs font-mono bg-rose-950/70 border border-rose-600/50 text-rose-300 hover:bg-rose-900 cursor-pointer"
+                    title="Stop crash loop"
+                  >
+                    <Square className="h-3 w-3 mr-1 fill-current" />
+                    Stop
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleAction("restart")}
+                    className="h-7 px-2 text-xs font-mono hover:bg-accent cursor-pointer"
                   >
                     <RotateCw className="h-3 w-3 mr-1" />
                     Restart
@@ -130,7 +162,7 @@ const ContainerItem = React.memo(({ name, status, cpu, memory, onAction, onManag
                   variant="success"
                   size="sm"
                   onClick={() => handleAction("start")}
-                  className="h-7 px-2.5 text-xs font-mono"
+                  className="h-7 px-2.5 text-xs font-mono cursor-pointer"
                 >
                   <Play className="h-3 w-3 mr-1 fill-current" />
                   Start

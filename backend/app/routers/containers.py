@@ -68,6 +68,17 @@ def get_container(
     return details
 
 
+@router.get("/containers/{name}/logs")
+def get_container_logs(
+    name: str,
+    tail: int = 100,
+    service: ContainerService = Depends(get_container_service),
+):
+    logs = service.get_container_logs(name, tail=tail)
+    return {"name": name, "logs": logs}
+
+
+
 @router.post("/containers/{name}/update")
 @router.patch("/containers/{name}")
 def update_container(

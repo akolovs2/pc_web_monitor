@@ -5,7 +5,7 @@ from app.domain.models import ContainerActionResult
 from app.infrastructure.runtimes.docker_runtime import DockerRuntime
 from app.config import config
 
-ALLOWED_ACTIONS = {"start", "stop", "restart", "remove", "delete"}
+ALLOWED_ACTIONS = {"start", "stop", "restart", "remove", "delete", "kill"}
 
 
 class ContainerService:
@@ -181,3 +181,8 @@ class ContainerService:
             restart_policy=restart_policy,
             command=command,
         )
+
+    def get_container_logs(self, name: str, tail: int = 100) -> str:
+        clean_name = name.strip()
+        return self._runtime.get_container_logs(clean_name, tail=tail)
+

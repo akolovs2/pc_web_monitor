@@ -103,7 +103,7 @@ export type ContainerSortOption =
 
 export type ContainerStatusFilter = 'all' | 'running' | 'stopped';
 
-export type ContainerActionType = 'start' | 'stop' | 'restart' | 'remove' | 'delete';
+export type ContainerActionType = 'start' | 'stop' | 'restart' | 'remove' | 'delete' | 'kill';
 
 export interface ContainerPortInfo {
     container_port: string;
