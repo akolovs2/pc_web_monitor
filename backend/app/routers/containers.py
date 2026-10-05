@@ -71,10 +71,11 @@ def get_container(
 @router.get("/containers/{name}/logs")
 def get_container_logs(
     name: str,
-    tail: int = 100,
+    tail: int = 150,
+    timestamps: bool = True,
     service: ContainerService = Depends(get_container_service),
 ):
-    logs = service.get_container_logs(name, tail=tail)
+    logs = service.get_container_logs(name, tail=tail, timestamps=timestamps)
     return {"name": name, "logs": logs}
 
 

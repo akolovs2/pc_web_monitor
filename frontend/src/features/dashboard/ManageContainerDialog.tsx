@@ -33,6 +33,9 @@ import {
   Info,
   Terminal,
   AlertTriangle,
+  Clock,
+  Copy,
+  Check,
 } from "lucide-react";
 import { fetchWithAuth } from "../../services/api";
 
@@ -83,6 +86,9 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [logs, setLogs] = useState<string>("");
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [logTail, setLogTail] = useState<string>("150");
+  const [showTimestamps, setShowTimestamps] = useState<boolean>(true);
+  const [copiedLogs, setCopiedLogs] = useState<boolean>(false);
 
   // Edit / Recreate form state
   const [image, setImage] = useState("");
@@ -204,7 +210,9 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
     if (!containerName) return;
     setLoadingLogs(true);
     try {
-      const res = await fetchWithAuth(`/docker/containers/${containerName}/logs?tail=150`);
+      const res = await fetchWithAuth(
+        `/docker/containers/${containerName}/logs?tail=${logTail}&timestamps=${showTimestamps}`
+      );
       if (res.ok) {
         const data = await res.json();
         setLogs(data.logs || "No logs available");
@@ -216,7 +224,14 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
     } finally {
       setLoadingLogs(false);
     }
-  }, [containerName]);
+  }, [containerName, logTail, showTimestamps]);
+
+  const handleCopyLogs = () => {
+    if (!logs) return;
+    navigator.clipboard.writeText(logs);
+    setCopiedLogs(true);
+    setTimeout(() => setCopiedLogs(false), 2000);
+  };
 
   useEffect(() => {
     if (activeTab === "logs" && open && containerName) {
@@ -691,28 +706,116 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
               </div>
             </div>
           ) : activeTab === "logs" ? (
-            /* Tab 2: Logs Viewer */
+            /* Tab 2: Logs Viewer with [{timedate}] and Controls */
             <div className="space-y-2.5">
-              <div className="flex items-center justify-between text-xs font-mono">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
                 <span className="text-muted-foreground flex items-center gap-1.5">
                   <Terminal className="h-3.5 w-3.5 text-amber-400" />
-                  Container Output (Tail 150)
+                  <span>Output</span>
+                  {logs && (
+                    <span className="text-[10px] text-muted-foreground/60">
+                      ({logs.split("\n").filter(Boolean).length} lines)
+                    </span>
+                  )}
                 </span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={fetchLogs}
-                  disabled={loadingLogs}
-                  className="h-6 px-2 text-[11px] font-mono cursor-pointer"
-                >
-                  <RotateCw className={`h-3 w-3 mr-1 ${loadingLogs ? "animate-spin" : ""}`} />
-                  Refresh Logs
-                </Button>
+
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {/* Timestamps toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setShowTimestamps((prev) => !prev)}
+                    className={`flex items-center gap-1 h-6 px-2 text-[11px] font-mono rounded border transition-colors cursor-pointer select-none ${
+                      showTimestamps
+                        ? "bg-primary/20 text-sky-300 border-primary/40 font-medium"
+                        : "bg-secondary/40 text-muted-foreground border-border hover:text-foreground"
+                    }`}
+                    title="Toggle timestamps [{timedate}]"
+                  >
+                    <Clock className="h-3 w-3" />
+                    <span>[{showTimestamps ? "Time: ON" : "Time: OFF"}]</span>
+                  </button>
+
+                  {/* Tail selector */}
+                  <div className="w-24">
+                    <Select
+                      value={logTail}
+                      onChange={(val) => setLogTail(val)}
+                      options={[
+                        { value: "50", label: "50 lines" },
+                        { value: "150", label: "150 lines" },
+                        { value: "300", label: "300 lines" },
+                        { value: "500", label: "500 lines" },
+                      ]}
+                      size="sm"
+                      triggerClassName="h-6 text-[11px] px-1.5"
+                    />
+                  </div>
+
+                  {/* Copy button */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyLogs}
+                    disabled={!logs || loadingLogs}
+                    className="h-6 px-2 text-[11px] font-mono cursor-pointer"
+                    title="Copy logs to clipboard"
+                  >
+                    {copiedLogs ? (
+                      <>
+                        <Check className="h-3 w-3 mr-1 text-emerald-400" />
+                        <span className="text-emerald-400">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3 w-3 mr-1" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Refresh button */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={fetchLogs}
+                    disabled={loadingLogs}
+                    className="h-6 px-2 text-[11px] font-mono cursor-pointer"
+                  >
+                    <RotateCw className={`h-3 w-3 mr-1 ${loadingLogs ? "animate-spin" : ""}`} />
+                    Refresh
+                  </Button>
+                </div>
               </div>
-              <pre className="p-3 rounded bg-black/95 border border-border font-mono text-[11px] text-slate-200 overflow-x-auto max-h-[380px] whitespace-pre-wrap select-text leading-relaxed">
-                {loadingLogs ? "Loading logs from Docker daemon..." : logs || "No log output recorded for this container."}
-              </pre>
+
+              {/* Logs Content Window */}
+              <div className="p-3 rounded bg-black/95 border border-border font-mono text-[11px] text-slate-200 overflow-x-auto max-h-[380px] whitespace-pre-wrap select-text leading-relaxed font-mono">
+                {loadingLogs ? (
+                  <span className="text-muted-foreground animate-pulse">Loading logs from Docker daemon...</span>
+                ) : logs ? (
+                  logs.split("\n").map((line, idx) => {
+                    const match = line.match(/^(\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\])\s?(.*)$/);
+                    if (match) {
+                      return (
+                        <div key={idx} className="leading-5">
+                          <span className="text-sky-400/80 font-mono mr-1.5 font-medium">
+                            {match[1]}
+                          </span>
+                          <span>{match[2]}</span>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div key={idx} className="leading-5">
+                        {line}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <span className="text-muted-foreground/60">No log output recorded for this container.</span>
+                )}
+              </div>
             </div>
           ) : (
             /* Tab 3: Edit & Recreate (Portainer Style) */

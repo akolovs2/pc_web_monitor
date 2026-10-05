@@ -182,7 +182,7 @@ class ContainerService:
             command=command,
         )
 
-    def get_container_logs(self, name: str, tail: int = 100) -> str:
+    def get_container_logs(self, name: str, tail: int = 100, timestamps: bool = True) -> str:
         clean_name = name.strip()
-        return self._runtime.get_container_logs(clean_name, tail=tail)
+        return self._runtime.get_container_logs(clean_name, tail=tail, timestamps=timestamps)
 

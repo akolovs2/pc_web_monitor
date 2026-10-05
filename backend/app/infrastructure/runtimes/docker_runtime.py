@@ -1,7 +1,12 @@
 from typing import List, Optional, Dict, Any
+import re
 import docker
 from app.domain.models import ContainerInfo, ContainerDetails, ContainerActionResult
 from app.domain.ports import IContainerRuntime
+
+LOG_TIMESTAMP_REGEX = re.compile(
+    r"^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?\s?(.*)$"
+)
 
 
 class DockerRuntime(IContainerRuntime):
@@ -309,13 +314,25 @@ class DockerRuntime(IContainerRuntime):
         except Exception as e:
             return ContainerActionResult(success=False, message=f"Rename failed: {str(e)}")
 
-    def get_container_logs(self, name: str, tail: int = 100) -> str:
+    def get_container_logs(self, name: str, tail: int = 100, timestamps: bool = True) -> str:
         if not self._client:
             return "Docker daemon unavailable"
         try:
             c = self._client.containers.get(name)
-            raw = c.logs(tail=tail, stdout=True, stderr=True)
-            return raw.decode("utf-8", errors="replace")
+            raw = c.logs(tail=tail, stdout=True, stderr=True, timestamps=timestamps)
+            decoded = raw.decode("utf-8", errors="replace")
+            if not timestamps:
+                return decoded
+
+            formatted_lines = []
+            for line in decoded.splitlines():
+                m = LOG_TIMESTAMP_REGEX.match(line)
+                if m:
+                    date_part, time_part, message = m.group(1), m.group(2), m.group(3)
+                    formatted_lines.append(f"[{date_part} {time_part}] {message}")
+                else:
+                    formatted_lines.append(line)
+            return "\n".join(formatted_lines)
         except docker.errors.NotFound:
             return f"Container '{name}' not found"
         except Exception as e:
