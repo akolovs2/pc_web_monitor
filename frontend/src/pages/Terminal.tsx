@@ -18,20 +18,20 @@ import {
 } from "lucide-react";
 
 const TERMINAL_THEME = {
-  background: "#090d16",
-  foreground: "#f8fafc",
+  background: "#08090c",
+  foreground: "#f0f6fc",
   cursor: "#38bdf8",
-  cursorAccent: "#090d16",
-  selectionBackground: "rgba(56, 189, 248, 0.3)",
-  black: "#1e293b",
+  cursorAccent: "#08090c",
+  selectionBackground: "rgba(56, 189, 248, 0.25)",
+  black: "#141720",
   red: "#f87171",
   green: "#4ade80",
-  yellow: "#facc15",
+  yellow: "#fbbf24",
   blue: "#38bdf8",
   magenta: "#c084fc",
   cyan: "#22d3ee",
-  white: "#f8fafc",
-  brightBlack: "#475569",
+  white: "#f0f6fc",
+  brightBlack: "#334155",
   brightRed: "#ef4444",
   brightGreen: "#22c55e",
   brightYellow: "#eab308",
@@ -205,14 +205,14 @@ export const TerminalPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen flex-col bg-[#090d16] text-slate-100 select-none">
+    <div className="flex h-screen w-screen flex-col bg-background text-foreground select-none">
       {/* Top Window Header */}
-      <header className="flex h-11 shrink-0 items-center justify-between border-b border-border/40 bg-[#0c1220] px-3 sm:px-4">
+      <header className="flex h-11 shrink-0 items-center justify-between border-b border-border bg-card px-3 sm:px-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center justify-center p-1.5 rounded-md bg-primary/10 border border-primary/20 text-primary">
-            <TerminalIcon className="h-4 w-4" />
+          <div className="flex items-center justify-center p-1 rounded bg-secondary/80 border border-border text-primary">
+            <TerminalIcon className="h-3.5 w-3.5" />
           </div>
-          <span className="font-semibold text-xs sm:text-sm tracking-tight text-slate-200">
+          <span className="font-semibold text-xs sm:text-sm tracking-tight text-foreground font-mono">
             Web SSH Terminal
           </span>
 
@@ -330,7 +330,7 @@ export const TerminalPage: React.FC = () => {
       {/* Terminal Viewport */}
       <main
         ref={containerRef}
-        className="flex-1 w-full overflow-hidden p-2 bg-[#090d16]"
+        className="flex-1 w-full overflow-hidden p-2 bg-background"
         onClick={() => termRef.current?.focus()}
       />
     </div>

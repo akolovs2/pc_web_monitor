@@ -44,23 +44,31 @@ const ContainerItem = React.memo(({ name, status, cpu, memory, onAction }: Conta
 
   return (
     <>
-      <div className="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-lg border border-border/50 bg-secondary/20 hover:bg-secondary/40 transition-all duration-200">
-        <div className="flex items-start sm:items-center gap-3 min-w-0">
-          <div className="p-2 rounded-md bg-secondary/60 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-0.5 sm:mt-0">
-            <Box className="h-4 w-4" />
+      <div className="group flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-2.5 sm:p-3 rounded border border-border bg-secondary/15 hover:bg-secondary/35 hover:border-border-hover transition-colors">
+        <div className="flex items-center gap-2.5 min-w-0">
+          {/* Status Indicator Dot */}
+          <div
+            className={`flex items-center justify-center p-1.5 rounded border shrink-0 ${
+              isRunning
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                : "border-border bg-secondary text-muted-foreground"
+            }`}
+          >
+            <Box className="h-3.5 w-3.5" />
           </div>
+
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-sm text-foreground truncate" title={name}>
+              <span className="font-mono font-semibold text-xs sm:text-sm text-foreground truncate" title={name}>
                 {name}
               </span>
               <Badge
-                variant={isRunning ? "success" : "destructive"}
-                className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0 flex items-center gap-1"
+                variant={isRunning ? "success" : "secondary"}
+                className="text-[9px] uppercase tracking-wider px-1.5 py-0"
               >
                 <span
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    isRunning ? "bg-emerald-400 animate-pulse" : "bg-rose-400"
+                  className={`h-1 w-1 rounded-full mr-0.5 ${
+                    isRunning ? "bg-emerald-400" : "bg-slate-400"
                   }`}
                 />
                 {status}
@@ -68,7 +76,7 @@ const ContainerItem = React.memo(({ name, status, cpu, memory, onAction }: Conta
             </div>
 
             {isRunning && (
-              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground font-mono">
+              <div className="flex items-center gap-3 mt-0.5 text-[11px] text-muted-foreground font-mono tabular-nums">
                 <span className="flex items-center gap-1">
                   <Cpu className="h-3 w-3 text-sky-400" />
                   <span>{cpu}%</span>
@@ -82,9 +90,9 @@ const ContainerItem = React.memo(({ name, status, cpu, memory, onAction }: Conta
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+        <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0">
           {loading ? (
-            <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 px-2.5 py-1 text-xs font-mono text-muted-foreground">
               <Spinner size="sm" />
               <span className="capitalize">{pendingAction === "remove" ? "Deleting" : pendingAction || "Updating"}...</span>
             </div>
@@ -96,7 +104,7 @@ const ContainerItem = React.memo(({ name, status, cpu, memory, onAction }: Conta
                     variant="outline"
                     size="sm"
                     onClick={() => handleAction("stop")}
-                    className="h-8 px-2.5 text-xs hover:border-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    className="h-7 px-2 text-xs font-mono hover:border-destructive hover:text-destructive hover:bg-destructive/10"
                   >
                     <Square className="h-3 w-3 mr-1 fill-current" />
                     Stop
@@ -105,7 +113,7 @@ const ContainerItem = React.memo(({ name, status, cpu, memory, onAction }: Conta
                     variant="secondary"
                     size="sm"
                     onClick={() => handleAction("restart")}
-                    className="h-8 px-2.5 text-xs hover:bg-accent transition-colors"
+                    className="h-7 px-2 text-xs font-mono hover:bg-accent"
                   >
                     <RotateCw className="h-3 w-3 mr-1" />
                     Restart
@@ -113,10 +121,10 @@ const ContainerItem = React.memo(({ name, status, cpu, memory, onAction }: Conta
                 </>
               ) : (
                 <Button
-                  variant="default"
+                  variant="success"
                   size="sm"
                   onClick={() => handleAction("start")}
-                  className="h-8 px-3 text-xs bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+                  className="h-7 px-2.5 text-xs font-mono"
                 >
                   <Play className="h-3 w-3 mr-1 fill-current" />
                   Start
@@ -127,10 +135,10 @@ const ContainerItem = React.memo(({ name, status, cpu, memory, onAction }: Conta
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowDeleteDialog(true)}
-                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                 title="Delete Container"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-3 w-3" />
               </Button>
             </>
           )}

@@ -11,15 +11,15 @@ export interface ProgressBarProps {
 }
 
 const getDefaultIndicatorClass = (value: number): string => {
-  if (value < 60) return "bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]";
-  if (value < 85) return "bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.4)]";
-  return "bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.4)]";
+  if (value < 70) return "bg-emerald-500";
+  if (value < 85) return "bg-amber-500";
+  return "bg-rose-500";
 };
 
 const sizeClasses = {
-  sm: "h-1.5",
-  md: "h-2.5",
-  lg: "h-4",
+  sm: "h-1 rounded-none",
+  md: "h-1.5 rounded-sm",
+  lg: "h-2.5 rounded-sm",
 };
 
 const ProgressBar = ({

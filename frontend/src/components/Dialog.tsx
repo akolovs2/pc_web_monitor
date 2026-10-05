@@ -13,7 +13,6 @@ import {
 } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { AlertTriangle, Info } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export interface ConfirmDialogProps {
   open?: boolean;
@@ -47,26 +46,26 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   const isDestructive = variant === "destructive";
 
   const defaultIcon = isDestructive ? (
-    <div className="p-2.5 rounded-full bg-destructive/15 text-destructive border border-destructive/30 shrink-0">
-      <AlertTriangle className="h-5 w-5" />
+    <div className="p-2 rounded bg-destructive/15 text-destructive border border-destructive/30 shrink-0">
+      <AlertTriangle className="h-4.5 w-4.5" />
     </div>
   ) : (
-    <div className="p-2.5 rounded-full bg-primary/15 text-primary border border-primary/30 shrink-0">
-      <Info className="h-5 w-5" />
+    <div className="p-2 rounded bg-primary/15 text-primary border border-primary/30 shrink-0">
+      <Info className="h-4.5 w-4.5" />
     </div>
   );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="sm:max-w-md bg-card/95 border-border shadow-2xl">
-        <div className="flex items-start gap-4">
+      <DialogContent className="sm:max-w-md bg-card border-border shadow-2xl">
+        <div className="flex items-start gap-3.5">
           {icon ?? defaultIcon}
-          <div className="space-y-2 flex-1">
+          <div className="space-y-1.5 flex-1">
             <DialogHeader className="text-left">
-              <DialogTitle className="text-lg font-bold">{title}</DialogTitle>
+              <DialogTitle className="text-base font-semibold">{title}</DialogTitle>
               {description && (
-                <DialogDescription asChild className="text-sm text-muted-foreground pt-1">
+                <DialogDescription asChild className="text-xs text-muted-foreground pt-0.5">
                   <div>{description}</div>
                 </DialogDescription>
               )}
@@ -76,13 +75,13 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           </div>
         </div>
 
-        <DialogFooter className="mt-4 gap-2 sm:gap-0">
+        <DialogFooter className="mt-3 gap-2 sm:gap-0">
           <DialogClose asChild>
             <Button
               type="button"
               variant="outline"
               disabled={loading}
-              className="text-xs sm:text-sm"
+              className="text-xs font-mono"
             >
               {cancelText}
             </Button>
@@ -95,10 +94,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
               e.preventDefault();
               await onConfirm();
             }}
-            className={cn(
-              "text-xs sm:text-sm font-medium",
-              isDestructive && "shadow-[0_0_15px_rgba(239,68,68,0.3)]"
-            )}
+            className="text-xs font-mono"
           >
             {confirmText}
           </Button>

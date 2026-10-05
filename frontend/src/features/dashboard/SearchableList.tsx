@@ -1,6 +1,6 @@
 import type { SearchableListProps } from "../../types/Metrics";
 import { Input, Badge, Card, CardHeader, CardTitle, CardContent } from "../../components";
-import { Search, Inbox } from "lucide-react";
+import { Search, Inbox, Box } from "lucide-react";
 
 const SearchableList = ({
   title,
@@ -15,27 +15,30 @@ const SearchableList = ({
   children,
   isEmpty,
 }: SearchableListProps) => (
-  <Card className="w-full bg-card/90 border-border/70 shadow-lg">
-    <CardHeader className="space-y-4 pb-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <CardTitle className="text-lg font-bold tracking-tight text-foreground">
+  <Card className="w-full bg-card border-border hover:border-border-hover transition-colors">
+    <CardHeader className="pb-3 space-y-2 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex items-center gap-2">
+        <div className="p-1.5 rounded bg-secondary/80 border border-border text-muted-foreground">
+          <Box className="h-4 w-4 text-emerald-400" />
+        </div>
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-xs font-semibold text-slate-300">
             {title}
           </CardTitle>
-          <Badge variant="secondary" className="font-mono text-xs px-2 py-0.5">
+          <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 border-border">
             {visibleCount} / {totalCount}
           </Badge>
         </div>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <div className="relative w-full sm:w-64">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <Input
           placeholder={placeholder}
           type="text"
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-9 bg-secondary/30 border-border/60 placeholder:text-muted-foreground/70"
+          className="h-8 pl-8 text-xs font-mono bg-secondary/30 border-border placeholder:text-muted-foreground/60 focus-visible:ring-1 focus-visible:ring-primary/60"
         />
       </div>
     </CardHeader>

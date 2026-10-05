@@ -35,64 +35,83 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background relative overflow-hidden">
-      {/* Background glow accents */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-
-      <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-2xl relative z-10 backdrop-blur-md">
-        <CardHeader className="space-y-2 text-center pb-6">
-          <div className="mx-auto w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-2 shadow-inner">
-            <Server className="h-6 w-6" />
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background text-foreground select-none">
+      <Card className="w-full max-w-sm border border-border bg-card shadow-2xl">
+        <CardHeader className="space-y-3 pb-5 text-center">
+          <div className="mx-auto w-10 h-10 rounded border border-primary/30 bg-primary/10 flex items-center justify-center text-primary">
+            <Server className="h-5 w-5" />
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">
-            PC Web Monitor
-          </CardTitle>
-          <CardDescription className="text-xs text-muted-foreground">
-            Sign in to access your homelab monitoring dashboard
-          </CardDescription>
+          <div>
+            <CardTitle className="text-base font-semibold tracking-tight text-slate-100">
+              HomeLab Console
+            </CardTitle>
+            <CardDescription className="text-xs text-muted-foreground mt-1">
+              Host authentication & telemetry gateway
+            </CardDescription>
+          </div>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="space-y-4">
           {error && (
-            <div className="flex items-start gap-2.5 p-3 mb-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm">
+            <div className="flex items-start gap-2 p-2.5 rounded border border-destructive/40 bg-destructive/10 text-destructive text-xs">
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Username"
-              id="username"
-              type="text"
-              placeholder="e.g. admin"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              autoFocus
-            />
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            <div className="space-y-1.5 text-left">
+              <label
+                htmlFor="username"
+                className="text-xs font-mono font-medium text-slate-300"
+              >
+                Username
+              </label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="admin"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                autoFocus
+                className="h-8.5 text-xs font-mono bg-secondary/30 border-border placeholder:text-muted-foreground/50"
+              />
+            </div>
 
-            <Input
-              label="Password"
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="space-y-1.5 text-left">
+              <label
+                htmlFor="password"
+                className="text-xs font-mono font-medium text-slate-300"
+              >
+                Password
+              </label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="h-8.5 text-xs font-mono bg-secondary/30 border-border placeholder:text-muted-foreground/50"
+              />
+            </div>
 
             <Button
               type="submit"
               loading={loading}
-              className="w-full h-10 mt-2 font-medium"
+              className="w-full h-8.5 mt-2 text-xs font-mono font-medium tracking-wide uppercase"
             >
-              <Lock className="h-4 w-4 mr-2" />
-              Sign In
+              <Lock className="h-3.5 w-3.5 mr-1.5" />
+              Authenticate
             </Button>
           </form>
         </CardContent>
       </Card>
+
+      <div className="mt-6 text-center text-[11px] font-mono text-muted-foreground/60">
+        Control Plane · System v2.0
+      </div>
     </div>
   );
 };

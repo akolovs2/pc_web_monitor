@@ -6,24 +6,25 @@ const NotFound = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-background text-foreground">
-      <div className="p-4 rounded-2xl bg-secondary/50 border border-border/80 mb-6 shadow-xl">
-        <AlertTriangle className="h-12 w-12 text-amber-400" />
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-background text-foreground select-none">
+      <div className="p-3 rounded border border-amber-500/30 bg-amber-500/10 mb-4 text-amber-400">
+        <AlertTriangle className="h-8 w-8" />
       </div>
 
-      <h1 className="text-6xl font-black tracking-tight text-foreground mb-2">404</h1>
-      <h2 className="text-xl font-semibold mb-2">Page Not Found</h2>
-      <p className="text-sm text-muted-foreground max-w-sm mb-8">
-        The page you are looking for doesn't exist or has been moved.
+      <h1 className="text-4xl font-bold font-mono tracking-tight text-foreground mb-1">404</h1>
+      <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-2">Endpoint Not Found</h2>
+      <p className="text-xs text-muted-foreground/80 max-w-sm mb-6">
+        The requested resource path does not exist on this node control plane.
       </p>
 
       <Button
         onClick={() => navigate(-1)}
         variant="outline"
-        className="gap-2"
+        size="sm"
+        className="gap-2 font-mono text-xs"
       >
-        <ArrowLeft className="h-4 w-4" />
-        Go back
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Return to Console
       </Button>
     </div>
   );

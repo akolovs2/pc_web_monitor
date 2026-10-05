@@ -152,35 +152,35 @@ export const MetricsHistoryCard: React.FC = React.memo(() => {
   }, [chartData]);
 
   return (
-    <Card className="w-full bg-card/90 border-border/70 shadow-lg">
-      <CardHeader className="space-y-4 pb-4">
+    <Card className="w-full bg-card border-border hover:border-border-hover transition-colors">
+      <CardHeader className="space-y-3 pb-3">
         {/* Top Header Row */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 text-primary">
-              <TrendingUp className="h-4 w-4" />
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded bg-secondary/80 border border-border text-muted-foreground">
+              <TrendingUp className="h-4 w-4 text-sky-400" />
             </div>
-            <div>
-              <CardTitle className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
-                Historical Trends
-                <Badge variant="secondary" className="font-mono text-[10px] px-1.5 py-0">
-                  {chartData.length} pts
-                </Badge>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-xs font-semibold text-slate-300">
+                Historical Telemetry
               </CardTitle>
+              <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 border-border">
+                {chartData.length} pts
+              </Badge>
             </div>
           </div>
 
-          {/* Time Range Selector & Refresh */}
+          {/* Time Range Selector & Controls */}
           <div className="flex items-center gap-1.5 self-start sm:self-auto">
-            <div className="flex items-center rounded-lg border border-border/80 bg-secondary/30 p-0.5">
+            <div className="flex items-center rounded border border-border bg-secondary/40 p-0.5">
               {TIME_RANGES.map(({ key, label }) => (
                 <button
                   key={key}
                   onClick={() => setSelectedRange(key)}
-                  className={`px-2.5 py-1 text-xs font-mono font-medium rounded-md transition-all cursor-pointer ${
+                  className={`px-2 py-0.5 text-xs font-mono font-medium rounded transition-all cursor-pointer ${
                     selectedRange === key
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-primary/20 text-sky-300 border border-primary/30"
+                      : "text-muted-foreground hover:text-foreground border border-transparent"
                   }`}
                 >
                   {label}
@@ -190,7 +190,7 @@ export const MetricsHistoryCard: React.FC = React.memo(() => {
 
             {/* Auto-refresh interval indicator */}
             <div
-              className="hidden sm:inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-secondary/30 border border-border/40 text-[10px] font-mono text-muted-foreground"
+              className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-border/60 bg-secondary/30 text-[10px] font-mono text-muted-foreground"
               title="Auto-refreshing every 10 seconds"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -202,61 +202,63 @@ export const MetricsHistoryCard: React.FC = React.memo(() => {
               size="icon"
               onClick={() => loadHistory(selectedRange, false)}
               disabled={loading}
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
               title="Refresh History"
             >
-              <RotateCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+              <RotateCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
             </Button>
           </div>
         </div>
 
         {/* Metric Selector Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          {(Object.keys(METRIC_CONFIG) as MetricKey[]).map((key) => {
-            const cfg = METRIC_CONFIG[key];
-            const Icon = cfg.icon;
-            const isSelected = selectedMetric === key;
-            return (
-              <button
-                key={key}
-                onClick={() => setSelectedMetric(key)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer whitespace-nowrap ${
-                  isSelected
-                    ? "bg-secondary text-foreground border-border shadow-sm ring-1 ring-border"
-                    : "bg-transparent text-muted-foreground border-transparent hover:bg-secondary/40 hover:text-foreground"
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" style={{ color: cfg.strokeColor }} />
-                <span>{cfg.label}</span>
-              </button>
-            );
-          })}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          <div className="flex items-center rounded border border-border bg-secondary/30 p-0.5">
+            {(Object.keys(METRIC_CONFIG) as MetricKey[]).map((key) => {
+              const cfg = METRIC_CONFIG[key];
+              const Icon = cfg.icon;
+              const isSelected = selectedMetric === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setSelectedMetric(key)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+                    isSelected
+                      ? "bg-secondary text-foreground border border-border shadow-sm font-semibold"
+                      : "text-muted-foreground hover:text-foreground border border-transparent"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" style={{ color: cfg.strokeColor }} />
+                  <span>{cfg.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Summary Stats Row */}
         {chartData.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-            <div className="rounded-lg border border-border/40 bg-secondary/20 p-2 text-left">
-              <span className="text-[10px] text-muted-foreground uppercase font-medium">Latest</span>
-              <p className="text-sm font-bold font-mono text-foreground mt-0.5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-border/40">
+            <div className="rounded border border-border/60 bg-secondary/25 p-2 text-left">
+              <span className="text-[10px] font-mono text-muted-foreground">Latest Value</span>
+              <p className="text-sm font-bold font-mono tabular-nums text-foreground mt-0.5">
                 {stats.latest.toFixed(1)}{currentConfig.unit}
               </p>
             </div>
-            <div className="rounded-lg border border-border/40 bg-secondary/20 p-2 text-left">
-              <span className="text-[10px] text-muted-foreground uppercase font-medium">Average</span>
-              <p className="text-sm font-bold font-mono text-foreground mt-0.5">
+            <div className="rounded border border-border/60 bg-secondary/25 p-2 text-left">
+              <span className="text-[10px] font-mono text-muted-foreground">Average</span>
+              <p className="text-sm font-bold font-mono tabular-nums text-foreground mt-0.5">
                 {stats.avg.toFixed(1)}{currentConfig.unit}
               </p>
             </div>
-            <div className="rounded-lg border border-border/40 bg-secondary/20 p-2 text-left">
-              <span className="text-[10px] text-muted-foreground uppercase font-medium">Peak (Max)</span>
-              <p className="text-sm font-bold font-mono text-foreground mt-0.5">
+            <div className="rounded border border-border/60 bg-secondary/25 p-2 text-left">
+              <span className="text-[10px] font-mono text-muted-foreground">Peak (Max)</span>
+              <p className="text-sm font-bold font-mono tabular-nums text-foreground mt-0.5">
                 {stats.max.toFixed(1)}{currentConfig.unit}
               </p>
             </div>
-            <div className="rounded-lg border border-border/40 bg-secondary/20 p-2 text-left">
-              <span className="text-[10px] text-muted-foreground uppercase font-medium">Minimum</span>
-              <p className="text-sm font-bold font-mono text-foreground mt-0.5">
+            <div className="rounded border border-border/60 bg-secondary/25 p-2 text-left">
+              <span className="text-[10px] font-mono text-muted-foreground">Minimum</span>
+              <p className="text-sm font-bold font-mono tabular-nums text-foreground mt-0.5">
                 {stats.min.toFixed(1)}{currentConfig.unit}
               </p>
             </div>

@@ -40,51 +40,51 @@ const Metrics = () => {
   ).length;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-40 border-b border-border/80 bg-background/80 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+    <div className="min-h-screen bg-background text-foreground select-none">
+      {/* Top Industrial Control Header */}
+      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 text-primary">
-              <Server className="h-5 w-5" />
+            <div className="p-1.5 rounded bg-secondary/80 border border-border text-sky-400">
+              <Server className="h-4 w-4" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-base sm:text-lg tracking-tight">
-                  {data.hostname || "HomeLab Monitor"}
-                </span>
-                <Badge
-                  variant="outline"
-                  className="hidden sm:inline-flex items-center gap-1.5 border-emerald-500/40 bg-emerald-500/10 text-emerald-400 text-[11px] font-medium"
-                >
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Live
-                </Badge>
-              </div>
+            <div className="flex items-center gap-2.5">
+              <span className="font-mono font-bold text-sm sm:text-base tracking-tight text-slate-100">
+                {data.hostname || "homelab-node"}
+              </span>
+              <Badge
+                variant="outline"
+                className="flex items-center gap-1.5 border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px] font-mono px-2 py-0.5"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                ONLINE
+              </Badge>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => window.open("/terminal", "_blank", "noopener,noreferrer")}
-              className="gap-1.5 text-xs font-medium border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 transition-all cursor-pointer shadow-sm"
+              className="h-7.5 gap-1.5 text-xs font-mono border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 transition-all cursor-pointer shadow-sm"
               title="Open Web SSH in new window"
             >
               <Terminal className="h-3.5 w-3.5" />
-              <span>Connect WEB SSH</span>
+              <span>&gt;_ Web SSH</span>
             </Button>
 
-            <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground bg-secondary/40 px-3 py-1.5 rounded-md border border-border/40">
-              <User className="h-3.5 w-3.5" />
+            <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-muted-foreground bg-secondary/50 px-2.5 py-1 rounded border border-border">
+              <User className="h-3 w-3 text-sky-400" />
               <span>{username || "admin"}</span>
             </div>
+
             <Button
               variant="outline"
               size="sm"
               onClick={() => auth.logout()}
-              className="gap-1.5 text-xs hover:border-destructive hover:text-destructive hover:bg-destructive/10"
+              className="h-7.5 gap-1.5 text-xs font-mono hover:border-destructive hover:text-destructive hover:bg-destructive/10"
+              title="End session"
             >
               <LogOut className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Logout</span>
@@ -93,22 +93,22 @@ const Metrics = () => {
         </div>
       </header>
 
-      {/* Main Content Dashboard */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      {/* Main Control Dashboard */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-5 sm:py-6 space-y-5">
         {/* Quick Stats Grid */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <Activity className="h-3.5 w-3.5 text-primary" />
-              System Metrics
-            </h2>
-            <div className="text-xs text-muted-foreground">
-              <span className="font-semibold text-emerald-400">{runningContainers}</span> of{" "}
-              <span>{(data.containers || []).length}</span> containers active
+        <section className="space-y-2.5">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5 font-medium text-slate-300">
+              <Activity className="h-3.5 w-3.5 text-sky-400" />
+              <span>System Telemetry</span>
+            </div>
+            <div className="font-mono text-muted-foreground text-[11px]">
+              <span className="text-emerald-400 font-semibold">{runningContainers}</span> /{" "}
+              <span>{(data.containers || []).length} containers active</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <ProgressCard title="CPU" value={data.cpu} />
             <ProgressCard title="RAM" value={data.ram} />
             <ProgressCard
@@ -124,19 +124,19 @@ const Metrics = () => {
         </section>
 
         {/* Historical Trends Chart Section */}
-        <section className="pt-1">
+        <section>
           <MetricsHistoryCard />
         </section>
 
         {/* Containers List Section */}
-        <section className="pt-1">
+        <section>
           <SearchableList
-            title="Docker Containers"
+            title="Container Workloads"
             visibleCount={visibleContainers.length}
             totalCount={filteredContainers.length}
             searchValue={containersSearch}
             onSearchChange={setContainersSearch}
-            placeholder="Search containers by name..."
+            placeholder="Filter containers by name..."
             listRef={containersRef}
             hasScrollbar={containersHasScrollbar}
             onScroll={handleContainersScroll}
