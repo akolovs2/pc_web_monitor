@@ -1,6 +1,6 @@
 import { auth } from './auth';
 
-const API_URL = import.meta.env.VITE_API_URL;
+import { API_URL } from '../config';
 
 export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
     let res = await fetch(`${API_URL}${url}`, {

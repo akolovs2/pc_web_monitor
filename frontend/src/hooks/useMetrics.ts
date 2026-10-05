@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { MetricsData } from '../types/Metrics';
 import { fetchWithAuth } from '../services/api';
 
-const WS_URL = (import.meta.env.VITE_WS_POOL_API);
+import { WS_URL } from '../config';
 
 const initialData: MetricsData = {
     hostname: '',
