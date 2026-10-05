@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, type SelectOption } from "@/components/ui/select";
 import type { CreateContainerParams } from "@/types/Metrics";
 import { Box, Plus, Trash2, Layers, AlertCircle, ArrowRight } from "lucide-react";
 
@@ -23,6 +24,13 @@ const PRESET_IMAGES = [
   { name: "postgres:16-alpine", desc: "SQL Database" },
   { name: "node:22-alpine", desc: "JavaScript runtime" },
   { name: "python:3.12-alpine", desc: "Python runtime" },
+];
+
+const RESTART_POLICY_OPTIONS: SelectOption[] = [
+  { value: "unless-stopped", label: "unless-stopped (Recommended)" },
+  { value: "always", label: "always" },
+  { value: "on-failure", label: "on-failure" },
+  { value: "no", label: "no (run once)" },
 ];
 
 export const CreateContainerDialog: React.FC<CreateContainerDialogProps> = ({
@@ -365,16 +373,12 @@ export const CreateContainerDialog: React.FC<CreateContainerDialogProps> = ({
               <label className="text-xs font-mono font-medium text-slate-300">
                 Restart Policy
               </label>
-              <select
+              <Select
                 value={restartPolicy}
-                onChange={(e) => setRestartPolicy(e.target.value)}
-                className="w-full h-8 rounded border border-border bg-secondary/40 text-xs font-mono px-2 text-foreground focus:outline-none focus:border-primary cursor-pointer"
-              >
-                <option value="unless-stopped">unless-stopped (Recommended)</option>
-                <option value="always">always</option>
-                <option value="on-failure">on-failure</option>
-                <option value="no">no (run once)</option>
-              </select>
+                onChange={setRestartPolicy}
+                options={RESTART_POLICY_OPTIONS}
+                size="sm"
+              />
             </div>
 
             <div className="space-y-1.5">

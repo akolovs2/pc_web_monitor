@@ -1,6 +1,41 @@
 import type { SearchableListProps, ContainerSortOption } from "../../types/Metrics";
-import { Input, Badge, Card, CardHeader, CardTitle, CardContent } from "../../components";
+import { Input, Badge, Card, CardHeader, CardTitle, CardContent, Select, type SelectGroup } from "../../components";
 import { Search, Inbox, Box, ArrowUpDown } from "lucide-react";
+
+const CONTAINER_SORT_GROUPS: SelectGroup<ContainerSortOption>[] = [
+  {
+    label: "Activity / Status",
+    options: [
+      { value: "status-desc", label: "Running First (Active)" },
+      { value: "status-asc", label: "Stopped First" },
+    ],
+  },
+  {
+    label: "Name",
+    options: [
+      { value: "name-asc", label: "Name: A → Z" },
+      { value: "name-desc", label: "Name: Z → A" },
+    ],
+  },
+  {
+    label: "Live Resource Telemetry",
+    options: [
+      { value: "cpu-desc", label: "CPU: Highest First (Live)" },
+      { value: "cpu-asc", label: "CPU: Lowest First (Live)" },
+      { value: "memory-desc", label: "RAM: Highest First (Live)" },
+      { value: "memory-asc", label: "RAM: Lowest First (Live)" },
+    ],
+  },
+  {
+    label: "Date & Identity",
+    options: [
+      { value: "created-desc", label: "Created: Newest First" },
+      { value: "created-asc", label: "Created: Oldest First" },
+      { value: "id-asc", label: "Container ID: A → Z" },
+      { value: "id-desc", label: "Container ID: Z → A" },
+    ],
+  },
+];
 
 const SearchableList = ({
   title,
@@ -107,35 +142,15 @@ const SearchableList = ({
               <span className="text-[11px] font-mono text-muted-foreground shrink-0 hidden sm:inline">
                 Sort:
               </span>
-              <div className="relative">
-                <select
-                  value={sortOption}
-                  onChange={(e) => onSortChange(e.target.value as ContainerSortOption)}
-                  className="h-8 pl-2.5 pr-7 text-xs font-mono bg-secondary/40 border border-border rounded text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer hover:bg-secondary/60 transition-colors"
-                >
-                  <optgroup label="Activity / Status">
-                    <option value="status-desc">Running First (Active)</option>
-                    <option value="status-asc">Stopped First</option>
-                  </optgroup>
-                  <optgroup label="Name">
-                    <option value="name-asc">Name: A → Z</option>
-                    <option value="name-desc">Name: Z → A</option>
-                  </optgroup>
-                  <optgroup label="Live Resource Telemetry">
-                    <option value="cpu-desc">CPU: Highest First (Live)</option>
-                    <option value="cpu-asc">CPU: Lowest First (Live)</option>
-                    <option value="memory-desc">RAM: Highest First (Live)</option>
-                    <option value="memory-asc">RAM: Lowest First (Live)</option>
-                  </optgroup>
-                  <optgroup label="Date & Identity">
-                    <option value="created-desc">Created: Newest First</option>
-                    <option value="created-asc">Created: Oldest First</option>
-                    <option value="id-asc">Container ID: A → Z</option>
-                    <option value="id-desc">Container ID: Z → A</option>
-                  </optgroup>
-                </select>
-                <ArrowUpDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-              </div>
+              <Select<ContainerSortOption>
+                value={sortOption}
+                onChange={onSortChange}
+                groups={CONTAINER_SORT_GROUPS}
+                icon={<ArrowUpDown className="h-3 w-3" />}
+                className="w-44 sm:w-52"
+                align="right"
+                ariaLabel="Sort containers"
+              />
 
               {/* Live resource auto-sorting pill indicator */}
               {isResourceSort && (

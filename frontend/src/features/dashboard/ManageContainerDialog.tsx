@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, type SelectOption } from "@/components/ui/select";
 import type {
   ContainerDetails,
   ContainerActionType,
@@ -44,6 +45,13 @@ interface ManageContainerDialogProps {
   onRecreate: (name: string, params: RecreateContainerParams) => Promise<{ success: boolean; message?: string }>;
   onAction: (name: string, action: ContainerActionType) => Promise<{ success: boolean; message?: string }>;
 }
+
+const RESTART_POLICY_OPTIONS: SelectOption[] = [
+  { value: "unless-stopped", label: "unless-stopped" },
+  { value: "always", label: "always" },
+  { value: "on-failure", label: "on-failure" },
+  { value: "no", label: "no" },
+];
 
 export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
   containerName,
@@ -644,16 +652,12 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
 
                   <div className="space-y-1">
                     <label className="text-[11px] font-mono text-muted-foreground">Restart Policy</label>
-                    <select
+                    <Select
                       value={inPlaceRestartPolicy}
-                      onChange={(e) => setInPlaceRestartPolicy(e.target.value)}
-                      className="w-full h-8 px-2 text-xs font-mono bg-background border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      <option value="unless-stopped">unless-stopped</option>
-                      <option value="always">always</option>
-                      <option value="on-failure">on-failure</option>
-                      <option value="no">no</option>
-                    </select>
+                      onChange={setInPlaceRestartPolicy}
+                      options={RESTART_POLICY_OPTIONS}
+                      size="sm"
+                    />
                   </div>
                 </div>
 
@@ -734,16 +738,12 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
 
                 <div className="space-y-1">
                   <label className="text-xs font-mono font-medium text-slate-300">Restart Policy</label>
-                  <select
+                  <Select
                     value={restartPolicy}
-                    onChange={(e) => setRestartPolicy(e.target.value)}
-                    className="w-full h-8 px-2.5 text-xs font-mono bg-secondary/30 border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="unless-stopped">unless-stopped</option>
-                    <option value="always">always</option>
-                    <option value="on-failure">on-failure</option>
-                    <option value="no">no</option>
-                  </select>
+                    onChange={setRestartPolicy}
+                    options={RESTART_POLICY_OPTIONS}
+                    size="sm"
+                  />
                 </div>
               </div>
 
