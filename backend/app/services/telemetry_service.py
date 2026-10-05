@@ -86,6 +86,15 @@ class TelemetryService:
             except Exception as e:
                 print(f"[TelemetryService] Error in update loop: {e}")
             counter += 1
+            await asyncio.sleep(1)
+
+    def refresh_containers_now(self) -> None:
+        """Immediately refreshes the container list in memory (e.g. after container action)."""
+        try:
+            containers = self._runtime.list_containers(config.HIDDEN_CONTAINERS)
+            self._state.containers = [c.to_dict() for c in containers]
+        except Exception as e:
+            print(f"[TelemetryService] Error refreshing containers: {e}")
 
     def start_worker(self) -> None:
         """Starts the background telemetry ingestion worker."""

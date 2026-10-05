@@ -99,6 +99,9 @@ class DockerRuntime(IContainerRuntime):
         except docker.errors.NotFound:
             return ContainerActionResult(success=False, message=f"Container '{name}' not found")
         except docker.errors.APIError as e:
-            return ContainerActionResult(success=False, message=str(e))
+            if e.status_code == 304:
+                return ContainerActionResult(success=True, message=f"Container already in requested state ({action})")
+            msg = getattr(e, "explanation", str(e)) or str(e)
+            return ContainerActionResult(success=False, message=msg)
         except Exception as e:
             return ContainerActionResult(success=False, message=f"Unexpected error: {str(e)}")

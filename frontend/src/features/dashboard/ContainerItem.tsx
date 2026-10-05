@@ -15,15 +15,16 @@ const ContainerItem = React.memo(({ name, status, cpu, memory, onAction }: Conta
     setPendingAction(null);
   }
 
+  // Universal safety timeout for any container action
   useEffect(() => {
-    if (pendingAction === "restart" && loading) {
+    if (loading) {
       const timeout = setTimeout(() => {
         setLoading(false);
         setPendingAction(null);
-      }, 5000);
+      }, 4000);
       return () => clearTimeout(timeout);
     }
-  }, [pendingAction, loading]);
+  }, [loading]);
 
   const handleAction = async (action: ContainerActionType) => {
     setLoading(true);
@@ -33,10 +34,15 @@ const ContainerItem = React.memo(({ name, status, cpu, memory, onAction }: Conta
       if (!result || !result.success) {
         setLoading(false);
         setPendingAction(null);
+        if (result?.message) {
+          alert(`Container ${action} error: ${result.message}`);
+        }
       }
-    } catch {
+    } catch (err: unknown) {
       setLoading(false);
       setPendingAction(null);
+      const msg = err instanceof Error ? err.message : String(err);
+      alert(`Failed to ${action} container: ${msg}`);
     }
   };
 
