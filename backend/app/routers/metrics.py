@@ -9,6 +9,9 @@ current_metrics = {
     'hostname': '',
     'cpu': 0,
     'ram': 0,
+    'storage': 0,
+    'storage_used': 0,
+    'storage_total': 0,
     'tasks': [],
     'containers': []
 }
@@ -23,6 +26,11 @@ async def metrics_monitor():
         cpu = await loop.run_in_executor(None, metrics_service.get_cpu_percent)
         current_metrics['cpu'] = cpu
         current_metrics['ram'] = metrics_service.get_ram_percent()
+        
+        storage_info = await loop.run_in_executor(None, metrics_service.get_storage_info)
+        current_metrics['storage'] = storage_info['percent']
+        current_metrics['storage_used'] = storage_info['used_gb']
+        current_metrics['storage_total'] = storage_info['total_gb']
         
         if counter % config.TASKS_UPDATE_INTERVAL == 0:
             current_metrics['tasks'] = await loop.run_in_executor(

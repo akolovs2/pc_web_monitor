@@ -1,3 +1,4 @@
+import os
 import psutil
 import docker
 import socket
@@ -10,6 +11,19 @@ def get_cpu_percent() -> float:
 
 def get_ram_percent() -> float:
     return psutil.virtual_memory().percent
+
+def get_storage_info() -> dict:
+    try:
+        path = os.path.abspath(os.sep)
+        usage = psutil.disk_usage(path)
+        return {
+            'percent': round(usage.percent, 1),
+            'used_gb': round(usage.used / (1024 ** 3), 1),
+            'total_gb': round(usage.total / (1024 ** 3), 1),
+            'free_gb': round(usage.free / (1024 ** 3), 1),
+        }
+    except Exception:
+        return {'percent': 0.0, 'used_gb': 0.0, 'total_gb': 0.0, 'free_gb': 0.0}
 
 def get_tasks() -> list[dict]:
     try:

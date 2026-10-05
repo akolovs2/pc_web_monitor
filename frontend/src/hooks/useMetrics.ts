@@ -8,6 +8,9 @@ const initialData: MetricsData = {
     hostname: '',
     cpu: 0,
     ram: 0,
+    storage: 0,
+    storage_used: 0,
+    storage_total: 0,
     tasks: [],
     containers: []
 };

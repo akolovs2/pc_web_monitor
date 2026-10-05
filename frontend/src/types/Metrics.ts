@@ -17,6 +17,9 @@ export interface MetricsData {
     hostname: string;
     cpu: number;
     ram: number;
+    storage?: number;
+    storage_used?: number;
+    storage_total?: number;
     containers: Container[];
     tasks: Task[];
 }
@@ -24,6 +27,8 @@ export interface MetricsData {
 export interface ProgressCardProps {
     title: string;
     value: number;
+    subtitle?: string;
+    extraInfo?: string;
 }
 
 export interface ServiceItemProps {

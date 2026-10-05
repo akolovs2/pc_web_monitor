@@ -97,9 +97,18 @@ const Metrics = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <ProgressCard title="CPU" value={data.cpu} />
             <ProgressCard title="RAM" value={data.ram} />
+            <ProgressCard
+              title="Storage"
+              value={data.storage ?? 0}
+              extraInfo={
+                data.storage_total
+                  ? `${data.storage_used ?? 0} GB / ${data.storage_total} GB`
+                  : undefined
+              }
+            />
           </div>
         </section>
 
