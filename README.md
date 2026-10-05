@@ -1,5 +1,7 @@
 # HomeLab Monitor
 
+[![Architecture diagram](https://gitdiagram.com/diagram-badge.svg)](https://gitdiagram.com/akolovs2/pc_web_monitor?utm_source=readme&utm_medium=badge)
+
 A self-hosted real-time server monitoring and control platform for personal homelab infrastructure.
 
 Built with **FastAPI** (Python) + **React** (TypeScript/Vite). Backend runs directly on the host for native system access, frontend is served via Docker Compose.

@@ -1,8 +1,11 @@
 import docker
+from app.config import config
 
 client = docker.from_env()
 
 def container_action(name: str, action: str) -> dict:
+    if any(name.startswith(prefix) for prefix in config.HIDDEN_CONTAINERS):
+        return {'success': False, 'message': 'Action not permitted on this container'}
     try:
         container = client.containers.get(name)
         getattr(container, action)()

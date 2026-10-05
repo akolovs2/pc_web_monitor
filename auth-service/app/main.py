@@ -1,12 +1,12 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import config
-from app.routers import metrics, tasks, containers
-from app.services.auth_service import get_current_user
+from app.models.database import database, init_db
+from app.routers import auth
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="PC/Server Monitor API",
+        title="Auth Service",
         docs_url=None,
         redoc_url=None,
         openapi_url=None
@@ -20,13 +20,15 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    app.include_router(metrics.router)
-    app.include_router(tasks.router, dependencies=[Depends(get_current_user)])
-    app.include_router(containers.router, dependencies=[Depends(get_current_user)])
+    app.include_router(auth.router)
 
     @app.on_event("startup")
     async def startup():
-        metrics.start_metrics_monitor()
+        await init_db()
+
+    @app.on_event("shutdown")
+    async def shutdown():
+        await database.disconnect()
 
     return app
 

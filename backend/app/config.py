@@ -15,7 +15,8 @@ class Config:
 
     JWT_SECRET = os.getenv("JWT_SECRET")
     SECURE_COOKIES = os.getenv("SECURE_COOKIES", "false").lower() == "true"
-    
+
     CORS_ORIGINS = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "").split(",") if origin.strip()]
+    HIDDEN_CONTAINERS = [name.strip() for name in os.getenv("HIDDEN_CONTAINERS", "pc_web_monitor-").split(",") if name.strip()]
 
 config = Config()

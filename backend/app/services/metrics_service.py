@@ -32,10 +32,15 @@ def get_tasks() -> list[dict]:
     except Exception:
         return []
     
+def _is_hidden(name: str) -> bool:
+    return any(name.startswith(prefix) for prefix in config.HIDDEN_CONTAINERS)
+
 def get_containers() -> list[dict]:
     try:
         containers = []
         for c in client.containers.list(all=True):
+            if _is_hidden(c.name):
+                continue
             data = {
                 'id': c.short_id,
                 'name': c.name,

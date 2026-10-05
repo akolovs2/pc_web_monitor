@@ -12,21 +12,15 @@ import '../styles/Metrics.css';
 import { Button } from '../components';
 
 const Metrics = () => {
-    const { data, killTask, containerAction, isConnected } = useMetrics();
+    const { data, containerAction } = useMetrics();
     const [containersSearch, setContainersSearch] = useState('');
-    const [tasksSearch, setTasksSearch] = useState('');
 
     const [username, setUsername] = useState('');
-    
+
     const [containersRef, containersHasScrollbar] = useHasScrollbar<HTMLDivElement>([data.containers, containersSearch]);
-    const [tasksRef, tasksHasScrollbar] = useHasScrollbar<HTMLDivElement>([data.tasks, tasksSearch]);
 
     const filteredContainers = (data.containers || []).filter((container) =>
         container.name.toLowerCase().includes(containersSearch.toLowerCase())
-    );
-
-    const filteredTasks = data.tasks.filter((task) =>
-        task.name.toLowerCase().includes(tasksSearch.toLowerCase())
     );
 
     const { visibleItems: visibleContainers, handleScroll: handleContainersScroll } = useInfiniteScroll(filteredContainers, INITIAL_LIST_COUNT, LIST_INCREMENT);
