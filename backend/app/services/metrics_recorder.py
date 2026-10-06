@@ -31,6 +31,6 @@ def cleanup_old_metrics(retention_days: Optional[int] = None) -> int:
     return _repo.cleanup_old(days)
 
 
-def get_metrics_history(range_str: str = "24h", limit: int = 500) -> List[Dict[str, Any]]:
+def get_metrics_history(range_str: str = "24h", limit: int = 2500) -> List[Dict[str, Any]]:
     points = _repo.get_history(range_str, limit)
     return [p.to_dict() for p in points]

@@ -108,7 +108,7 @@ class TelemetryService:
         if self._worker_task:
             self._worker_task.cancel()
 
-    async def get_history(self, range_str: str = "24h", limit: int = 500) -> List[Dict[str, Any]]:
+    async def get_history(self, range_str: str = "24h", limit: int = 2500) -> List[Dict[str, Any]]:
         """Queries historical telemetry from repository."""
         loop = asyncio.get_running_loop()
         records = await loop.run_in_executor(None, self._repo.get_history, range_str, limit)

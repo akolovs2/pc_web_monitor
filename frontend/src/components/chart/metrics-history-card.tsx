@@ -35,7 +35,6 @@ const METRIC_CONFIG: Record<
     fillColor: "#38bdf8",
     icon: Cpu,
     min: 0,
-    max: 100,
   },
   ram: {
     label: "RAM Usage",
@@ -44,7 +43,6 @@ const METRIC_CONFIG: Record<
     fillColor: "#818cf8",
     icon: MemoryStick,
     min: 0,
-    max: 100,
   },
   storage: {
     label: "Storage Usage",
@@ -53,7 +51,6 @@ const METRIC_CONFIG: Record<
     fillColor: "#f59e0b",
     icon: HardDrive,
     min: 0,
-    max: 100,
   },
   running_containers: {
     label: "Active Containers",

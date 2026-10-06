@@ -57,7 +57,9 @@ def _downsample_records(records: List[MetricRecord], limit: int) -> List[Histori
         if not chunk:
             continue
 
-        # Preserve the maximum values within this time bucket so spikes are never missed
+        # Find the record with the highest peak activity in this bucket
+        peak_record = max(chunk, key=lambda r: (r.cpu_percent, r.ram_percent))
+
         peak_cpu = max(r.cpu_percent for r in chunk)
         peak_ram = max(r.ram_percent for r in chunk)
         peak_storage = max(r.storage_percent for r in chunk)
@@ -66,9 +68,11 @@ def _downsample_records(records: List[MetricRecord], limit: int) -> List[Histori
         peak_containers = max((r.containers_count or 0) for r in chunk)
         peak_running = max((r.running_containers or 0) for r in chunk)
 
-        # Anchor timestamp to the latest point for the last bucket, midpoint otherwise
+        # Preserve the exact peak timestamp so hover and tooltips match 1h perfectly
         if i == limit - 1:
             ts = chunk[-1].timestamp
+        elif peak_cpu > 5.0 or peak_ram > 5.0:
+            ts = peak_record.timestamp
         else:
             ts = chunk[len(chunk) // 2].timestamp
 
@@ -85,6 +89,8 @@ def _downsample_records(records: List[MetricRecord], limit: int) -> List[Histori
             )
         )
 
+    # Ensure strictly sorted by timestamp
+    downsampled.sort(key=lambda p: p.timestamp)
     return downsampled
 
 
@@ -124,7 +130,7 @@ class SqliteMetricsRepository(IMetricsRepository):
         finally:
             session.close()
 
-    def get_history(self, range_str: str = "24h", limit: int = 500) -> List[HistoricalMetricPoint]:
+    def get_history(self, range_str: str = "24h", limit: int = 2500) -> List[HistoricalMetricPoint]:
         delta = _parse_time_range(range_str)
         since = datetime.now(timezone.utc) - delta
 
@@ -138,6 +144,24 @@ class SqliteMetricsRepository(IMetricsRepository):
             records = session.scalars(stmt).all()
             if not records:
                 return []
+
+            # 1h (~360 records) and 6h (~2160 records) are kept raw without downsampling
+            # so that no data points or spikes are ever lost.
+            clean_range = range_str.lower().strip()
+            if clean_range in ("1h", "6h") or len(records) <= limit:
+                return [
+                    HistoricalMetricPoint(
+                        timestamp=_format_timestamp(r.timestamp),
+                        cpu=r.cpu_percent,
+                        ram=r.ram_percent,
+                        storage=r.storage_percent,
+                        storage_used_gb=r.storage_used_gb,
+                        storage_total_gb=r.storage_total_gb,
+                        containers_count=r.containers_count,
+                        running_containers=r.running_containers,
+                    )
+                    for r in records
+                ]
 
             return _downsample_records(records, limit)
         except Exception as e:

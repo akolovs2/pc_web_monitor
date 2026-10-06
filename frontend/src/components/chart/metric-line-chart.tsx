@@ -109,20 +109,19 @@ export const MetricLineChart: React.FC<MetricLineChartProps> = React.memo(({
     // Baseline minimum: default to min prop if provided, else 0 if data >= 0, else floor of dataMin
     const mn = min !== undefined ? min : dataMin >= 0 ? 0 : Math.floor(dataMin);
 
-    // If max is explicitly provided (e.g. 100% for CPU/RAM/Storage):
-    // Use it directly to maintain consistent visual scale across all time ranges.
-    if (max !== undefined) {
+    // If max is explicitly provided, respect it as an upper bound or cap
+    if (max !== undefined && max > 0) {
       const mx = Math.max(max, dataMax > max ? Math.ceil(dataMax / 10) * 10 : max);
       const step = Math.max(1, Math.round((mx - mn) / 4 / 5) * 5 || 20);
       return [mn, mx, step];
     }
 
-    // Dynamic ceiling for unbounded metrics (e.g. active containers)
+    // Dynamic ceiling adapted to dataMax with ~15% headroom ("nearest max")
     let effectiveMax: number;
     if (dataMax <= mn) {
       effectiveMax = mn + 10;
     } else {
-      const headroom = (dataMax - mn) * 0.12;
+      const headroom = (dataMax - mn) * 0.15;
       effectiveMax = dataMax + Math.max(headroom, dataMax - mn > 10 ? 2 : 0.5);
     }
 
@@ -147,7 +146,7 @@ export const MetricLineChart: React.FC<MetricLineChartProps> = React.memo(({
     let mx = Math.ceil(effectiveMax / step) * step;
 
     // If percentage metric and dataMax <= 100, ensure ceiling doesn't exceed 100
-    if ((unit === "%" || max === 100) && dataMax <= 100 && mx > 100) {
+    if (unit === "%" && dataMax <= 100 && mx > 100) {
       mx = 100;
       step = 20;
     }
