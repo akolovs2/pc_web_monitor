@@ -20,9 +20,14 @@ class MetricRecord(Base):
     )
 
     def to_dict(self) -> dict:
+        ts_str = None
+        if self.timestamp:
+            ts_str = self.timestamp.isoformat()
+            if not ts_str.endswith("Z") and "+" not in ts_str:
+                ts_str += "Z"
         return {
             "id": self.id,
-            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
+            "timestamp": ts_str,
             "cpu": self.cpu_percent,
             "ram": self.ram_percent,
             "storage": self.storage_percent,

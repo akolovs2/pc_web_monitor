@@ -109,21 +109,21 @@ export const MetricLineChart: React.FC<MetricLineChartProps> = React.memo(({
     // Baseline minimum: default to min prop if provided, else 0 if data >= 0, else floor of dataMin
     const mn = min !== undefined ? min : dataMin >= 0 ? 0 : Math.floor(dataMin);
 
-    // When max is narrow, adapt to the nearest nice ceiling above dataMax with headroom
-    // Add ~12% headroom above the peak value so the curve doesn't collide with the chart ceiling
+    // If max is explicitly provided (e.g. 100% for CPU/RAM/Storage):
+    // Use it directly to maintain consistent visual scale across all time ranges.
+    if (max !== undefined) {
+      const mx = Math.max(max, dataMax > max ? Math.ceil(dataMax / 10) * 10 : max);
+      const step = Math.max(1, Math.round((mx - mn) / 4 / 5) * 5 || 20);
+      return [mn, mx, step];
+    }
+
+    // Dynamic ceiling for unbounded metrics (e.g. active containers)
     let effectiveMax: number;
     if (dataMax <= mn) {
       effectiveMax = mn + 10;
     } else {
       const headroom = (dataMax - mn) * 0.12;
       effectiveMax = dataMax + Math.max(headroom, dataMax - mn > 10 ? 2 : 0.5);
-    }
-
-    // If max prop was provided (e.g. 100% cap):
-    // Only expand all the way to max if dataMax is actually close to max (e.g. >= 85% of max).
-    // When data is narrow, use the nearest nice ceiling calculated from dataMax.
-    if (max !== undefined && dataMax >= max * 0.85) {
-      effectiveMax = Math.max(effectiveMax, max);
     }
 
     // Calculate clean "nice" step and niceMax using standard 1, 2, 5 intervals
@@ -160,9 +160,29 @@ export const MetricLineChart: React.FC<MetricLineChartProps> = React.memo(({
     return [mn, mx, step];
   }, [values, min, max, unit]);
 
+  const timestamps = useMemo(
+    () => data.map((d) => new Date(d.timestamp).getTime()),
+    [data]
+  );
+
+  const [minTs, maxTs] = useMemo(() => {
+    if (timestamps.length === 0) return [0, 0];
+    return [timestamps[0], timestamps[timestamps.length - 1]];
+  }, [timestamps]);
+
+  const timeSpan = maxTs - minTs;
+
   const xOf = useCallback(
-    (i: number) => leftPad + (N > 1 ? (i / (N - 1)) * chartW : chartW / 2),
-    [N, leftPad, chartW]
+    (i: number) => {
+      if (N <= 1) return leftPad + chartW / 2;
+      const t = timestamps[i];
+      if (timeSpan > 0 && !isNaN(t)) {
+        const ratio = Math.max(0, Math.min(1, (t - minTs) / timeSpan));
+        return leftPad + ratio * chartW;
+      }
+      return leftPad + (i / (N - 1)) * chartW;
+    },
+    [N, leftPad, chartW, timestamps, minTs, timeSpan]
   );
 
   const yOf = useCallback(
@@ -306,8 +326,21 @@ export const MetricLineChart: React.FC<MetricLineChartProps> = React.memo(({
     (clientX: number, rect: DOMRect) => {
       if (N < 2) return;
       const svgX = ((clientX - rect.left) / rect.width) * W;
-      const raw = ((svgX - leftPad) / chartW) * (N - 1);
-      const best = Math.max(0, Math.min(N - 1, Math.round(raw)));
+      const targetX = Math.max(leftPad, Math.min(leftPad + chartW, svgX));
+
+      // Find nearest data point to cursor by rendered X coordinate
+      let best = 0;
+      let minDiff = Infinity;
+      for (let i = 0; i < N; i++) {
+        const diff = Math.abs(xOf(i) - targetX);
+        if (diff < minDiff) {
+          minDiff = diff;
+          best = i;
+        } else if (diff > minDiff) {
+          break;
+        }
+      }
+
       track(
         best,
         (xOf(best) / W) * rect.width,

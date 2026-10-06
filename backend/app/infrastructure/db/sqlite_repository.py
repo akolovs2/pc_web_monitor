@@ -20,6 +20,74 @@ def _parse_time_range(range_str: str) -> timedelta:
     return timedelta(hours=24)
 
 
+def _format_timestamp(dt: Optional[datetime]) -> str:
+    if not dt:
+        return ""
+    s = dt.isoformat()
+    if not s.endswith("Z") and "+" not in s:
+        s += "Z"
+    return s
+
+
+def _downsample_records(records: List[MetricRecord], limit: int) -> List[HistoricalMetricPoint]:
+    total = len(records)
+    if total <= limit or limit <= 0:
+        return [
+            HistoricalMetricPoint(
+                timestamp=_format_timestamp(r.timestamp),
+                cpu=r.cpu_percent,
+                ram=r.ram_percent,
+                storage=r.storage_percent,
+                storage_used_gb=r.storage_used_gb,
+                storage_total_gb=r.storage_total_gb,
+                containers_count=r.containers_count,
+                running_containers=r.running_containers,
+            )
+            for r in records
+        ]
+
+    # Partition records into `limit` time buckets, preserving peak values in each bucket
+    bucket_size = total / limit
+    downsampled: List[HistoricalMetricPoint] = []
+
+    for i in range(limit):
+        start_idx = int(i * bucket_size)
+        end_idx = int((i + 1) * bucket_size) if i < limit - 1 else total
+        chunk = records[start_idx:end_idx]
+        if not chunk:
+            continue
+
+        # Preserve the maximum values within this time bucket so spikes are never missed
+        peak_cpu = max(r.cpu_percent for r in chunk)
+        peak_ram = max(r.ram_percent for r in chunk)
+        peak_storage = max(r.storage_percent for r in chunk)
+        peak_storage_used = max((r.storage_used_gb or 0.0) for r in chunk)
+        storage_total = chunk[-1].storage_total_gb
+        peak_containers = max((r.containers_count or 0) for r in chunk)
+        peak_running = max((r.running_containers or 0) for r in chunk)
+
+        # Anchor timestamp to the latest point for the last bucket, midpoint otherwise
+        if i == limit - 1:
+            ts = chunk[-1].timestamp
+        else:
+            ts = chunk[len(chunk) // 2].timestamp
+
+        downsampled.append(
+            HistoricalMetricPoint(
+                timestamp=_format_timestamp(ts),
+                cpu=round(peak_cpu, 2),
+                ram=round(peak_ram, 2),
+                storage=round(peak_storage, 2),
+                storage_used_gb=round(peak_storage_used, 2) if peak_storage_used > 0 else None,
+                storage_total_gb=storage_total,
+                containers_count=peak_containers,
+                running_containers=peak_running,
+            )
+        )
+
+    return downsampled
+
+
 class SqliteMetricsRepository(IMetricsRepository):
     """Concrete SQLAlchemy SQLite repository for metric snapshots."""
 
@@ -71,28 +139,7 @@ class SqliteMetricsRepository(IMetricsRepository):
             if not records:
                 return []
 
-            # Downsample if record count exceeds target limit
-            total = len(records)
-            if total > limit and limit > 0:
-                step = total / limit
-                sampled_indices = [int(i * step) for i in range(limit)]
-                if (total - 1) not in sampled_indices:
-                    sampled_indices[-1] = total - 1
-                records = [records[i] for i in sampled_indices]
-
-            return [
-                HistoricalMetricPoint(
-                    timestamp=r.timestamp.isoformat() if r.timestamp else "",
-                    cpu=r.cpu_percent,
-                    ram=r.ram_percent,
-                    storage=r.storage_percent,
-                    storage_used_gb=r.storage_used_gb,
-                    storage_total_gb=r.storage_total_gb,
-                    containers_count=r.containers_count,
-                    running_containers=r.running_containers,
-                )
-                for r in records
-            ]
+            return _downsample_records(records, limit)
         except Exception as e:
             print(f"[SqliteMetricsRepository] Error fetching history: {e}")
             return []

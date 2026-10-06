@@ -91,20 +91,40 @@ export function smoothPath(pts: readonly [number, number][]): string {
 
 /**
  * Reduces dense coordinate arrays to prevent sluggish SVG rendering
- * while preserving peaks and valleys.
+ * while preserving peaks and valleys (min and max Y).
  */
 export function decimateCoords(
   coords: [number, number][],
   chartCssW: number,
 ): [number, number][] {
-  if (coords.length <= 200) return coords;
-  const maxPts = Math.max(150, Math.round(chartCssW / 2));
+  // SVG handles up to 500 points with ease; only decimate if significantly dense
+  if (coords.length <= 500) return coords;
+  const maxPts = Math.max(250, Math.round(chartCssW));
   const step = Math.ceil(coords.length / maxPts);
   if (step <= 1) return coords;
 
   const out: [number, number][] = [coords[0]];
-  for (let i = step; i < coords.length - 1; i += step) {
-    out.push(coords[i]);
+  for (let i = 1; i < coords.length - 1; i += step) {
+    const chunk = coords.slice(i, Math.min(i + step, coords.length - 1));
+    if (chunk.length === 0) continue;
+
+    // In SVG space, lowest Y is the peak (highest metric value),
+    // and highest Y is the valley (lowest metric value).
+    let peakPt = chunk[0];
+    let valleyPt = chunk[0];
+    for (let j = 1; j < chunk.length; j++) {
+      if (chunk[j][1] < peakPt[1]) peakPt = chunk[j];
+      if (chunk[j][1] > valleyPt[1]) valleyPt = chunk[j];
+    }
+
+    // Preserve temporal order (by X coordinate)
+    if (peakPt[0] <= valleyPt[0]) {
+      out.push(peakPt);
+      if (valleyPt !== peakPt) out.push(valleyPt);
+    } else {
+      out.push(valleyPt);
+      if (peakPt !== valleyPt) out.push(peakPt);
+    }
   }
   out.push(coords[coords.length - 1]);
   return out;
