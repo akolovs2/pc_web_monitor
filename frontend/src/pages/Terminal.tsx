@@ -53,15 +53,23 @@ export const TerminalPage: React.FC = () => {
   const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
+  const queryParams = new URLSearchParams(window.location.search);
+  const containerParam = queryParams.get("container");
+
   const initSocket = useCallback((term: Terminal, fitAddon: FitAddon) => {
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
     }
 
-    term.write("\r\n\x1b[38;5;39m[Connecting to Web SSH terminal...]\x1b[0m\r\n");
+    const connectMsg = containerParam
+      ? `[Connecting to docker exec in ${containerParam}...]`
+      : "[Connecting to Web SSH terminal...]";
+    term.write(`\r\n\x1b[38;5;39m${connectMsg}\x1b[0m\r\n`);
 
-    const wsUrl = `${WS_URL}/ws/terminal`;
+    const wsUrl = containerParam
+      ? `${WS_URL}/ws/terminal?container=${encodeURIComponent(containerParam)}`
+      : `${WS_URL}/ws/terminal`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
@@ -213,7 +221,7 @@ export const TerminalPage: React.FC = () => {
             <TerminalIcon className="h-3.5 w-3.5" />
           </div>
           <span className="font-semibold text-xs sm:text-sm tracking-tight text-foreground font-mono">
-            Web SSH Terminal
+            {containerParam ? `Docker Exec: ${containerParam}` : "Web SSH Terminal"}
           </span>
 
           {/* Status Badge */}

@@ -38,6 +38,7 @@ import {
   Check,
 } from "lucide-react";
 import { fetchWithAuth } from "../../services/api";
+import { ContainerExecTerminal } from "./ContainerExecTerminal";
 
 interface ManageContainerDialogProps {
   containerName: string | null;
@@ -81,7 +82,7 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
   onRecreate,
   onAction,
 }) => {
-  const [activeTab, setActiveTab] = useState<"overview" | "edit" | "logs">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "edit" | "logs" | "exec">("overview");
   const [details, setDetails] = useState<ContainerDetails | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [logs, setLogs] = useState<string>("");
@@ -363,7 +364,7 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl bg-card border-border shadow-2xl p-5 select-none max-h-[92vh] flex flex-col">
+      <DialogContent className="sm:max-w-2xl lg:max-w-3xl bg-card border-border shadow-2xl p-5 select-none max-h-[92vh] flex flex-col">
         {/* Header */}
         <DialogHeader className="space-y-2 pb-3 text-left border-b border-border/60 shrink-0">
           <div className="flex items-center justify-between gap-3">
@@ -496,6 +497,18 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
             >
               <Terminal className="h-3.5 w-3.5 text-amber-400" />
               Logs
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("exec")}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-mono transition-colors cursor-pointer ${
+                activeTab === "exec"
+                  ? "bg-secondary text-foreground border border-border"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
+              }`}
+            >
+              <Terminal className="h-3.5 w-3.5 text-emerald-400" />
+              Exec Shell
             </button>
             <button
               type="button"
@@ -790,7 +803,7 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
               </div>
 
               {/* Logs Content Window */}
-              <div className="p-3 rounded bg-black/95 border border-border font-mono text-[11px] text-slate-200 overflow-x-auto max-h-[380px] whitespace-pre-wrap select-text leading-relaxed font-mono">
+              <div className="p-3 rounded bg-black/95 border border-border font-mono text-[11px] text-slate-200 overflow-x-auto max-h-[220px] whitespace-pre-wrap select-text leading-relaxed font-mono">
                 {loadingLogs ? (
                   <span className="text-muted-foreground animate-pulse">Loading logs from Docker daemon...</span>
                 ) : logs ? (
@@ -816,9 +829,27 @@ export const ManageContainerDialog: React.FC<ManageContainerDialogProps> = ({
                   <span className="text-muted-foreground/60">No log output recorded for this container.</span>
                 )}
               </div>
+
+              {/* Docker Exec Terminal directly under Logs */}
+              <div className="pt-1">
+                <ContainerExecTerminal
+                  containerName={containerName || ""}
+                  isRunning={isRunning}
+                  onStart={() => handleQuickAction("start")}
+                />
+              </div>
+            </div>
+          ) : activeTab === "exec" ? (
+            /* Tab: Dedicated Exec Terminal */
+            <div className="space-y-2">
+              <ContainerExecTerminal
+                containerName={containerName || ""}
+                isRunning={isRunning}
+                onStart={() => handleQuickAction("start")}
+              />
             </div>
           ) : (
-            /* Tab 3: Edit & Recreate (Portainer Style) */
+            /* Tab: Edit & Recreate (Portainer Style) */
             <form id="recreate-form" onSubmit={handleRecreateSubmit} className="space-y-3.5">
               <div className="p-2.5 rounded border border-sky-500/20 bg-sky-950/20 text-xs font-mono text-sky-200 flex items-start gap-2">
                 <Info className="h-4 w-4 shrink-0 text-sky-400 mt-0.5" />
