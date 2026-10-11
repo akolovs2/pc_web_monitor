@@ -90,42 +90,84 @@ export function smoothPath(pts: readonly [number, number][]): string {
 }
 
 /**
- * Reduces dense coordinate arrays to prevent sluggish SVG rendering
- * while preserving peaks and valleys (min and max Y).
+ * Downsamples dense coordinate arrays using the Largest Triangle Three Buckets (LTTB) algorithm.
+ * Mathematically preserves visual peaks, troughs, and data trends without introducing
+ * artificial alternating oscillations or fuzzy carpet artifacts.
  */
 export function decimateCoords(
   coords: [number, number][],
   chartCssW: number,
 ): [number, number][] {
-  // SVG handles up to 500 points with ease; only decimate if significantly dense
-  if (coords.length <= 500) return coords;
-  const maxPts = Math.max(250, Math.round(chartCssW));
-  const step = Math.ceil(coords.length / maxPts);
-  if (step <= 1) return coords;
+  const n = coords.length;
+  // If points are already sparse enough for smooth SVG rendering, return directly
+  const targetPts = Math.min(n, Math.max(250, Math.round(chartCssW / 1.5)));
+  if (n <= targetPts || n <= 3) return coords;
 
-  const out: [number, number][] = [coords[0]];
-  for (let i = 1; i < coords.length - 1; i += step) {
-    const chunk = coords.slice(i, Math.min(i + step, coords.length - 1));
-    if (chunk.length === 0) continue;
+  return lttbDecimate(coords, targetPts);
+}
 
-    // In SVG space, lowest Y is the peak (highest metric value),
-    // and highest Y is the valley (lowest metric value).
-    let peakPt = chunk[0];
-    let valleyPt = chunk[0];
-    for (let j = 1; j < chunk.length; j++) {
-      if (chunk[j][1] < peakPt[1]) peakPt = chunk[j];
-      if (chunk[j][1] > valleyPt[1]) valleyPt = chunk[j];
-    }
+/**
+ * Largest Triangle Three Buckets (LTTB) downsampling on 2D coordinates.
+ */
+export function lttbDecimate(
+  pts: readonly [number, number][],
+  threshold: number,
+): [number, number][] {
+  const n = pts.length;
+  if (threshold >= n || threshold <= 2) return [...pts];
 
-    // Preserve temporal order (by X coordinate)
-    if (peakPt[0] <= valleyPt[0]) {
-      out.push(peakPt);
-      if (valleyPt !== peakPt) out.push(valleyPt);
+  const sampled: [number, number][] = new Array(threshold);
+  let sampledIdx = 0;
+
+  // Always retain first point
+  sampled[sampledIdx++] = pts[0];
+
+  const bucketSize = (n - 2) / (threshold - 2);
+  let a = 0; // Index of previously selected point
+
+  for (let i = 0; i < threshold - 2; i++) {
+    const rangeStart = Math.floor(i * bucketSize) + 1;
+    const rangeEnd = Math.min(Math.floor((i + 1) * bucketSize) + 1, n);
+
+    const nextStart = Math.floor((i + 1) * bucketSize) + 1;
+    const nextEnd = Math.min(Math.floor((i + 2) * bucketSize) + 1, n);
+
+    let avgX = 0;
+    let avgY = 0;
+    const nextCount = nextEnd - nextStart;
+    if (nextCount > 0) {
+      for (let j = nextStart; j < nextEnd; j++) {
+        avgX += pts[j][0];
+        avgY += pts[j][1];
+      }
+      avgX /= nextCount;
+      avgY /= nextCount;
     } else {
-      out.push(valleyPt);
-      if (peakPt !== valleyPt) out.push(peakPt);
+      avgX = pts[n - 1][0];
+      avgY = pts[n - 1][1];
     }
+
+    const ax = pts[a][0];
+    const ay = pts[a][1];
+
+    let maxArea = -1;
+    let maxIdx = rangeStart;
+
+    for (let j = rangeStart; j < rangeEnd; j++) {
+      const bx = pts[j][0];
+      const by = pts[j][1];
+      const area = Math.abs((ax - avgX) * (by - ay) - (ax - bx) * (avgY - ay));
+      if (area > maxArea) {
+        maxArea = area;
+        maxIdx = j;
+      }
+    }
+
+    sampled[sampledIdx++] = pts[maxIdx];
+    a = maxIdx;
   }
-  out.push(coords[coords.length - 1]);
-  return out;
+
+  // Always retain last point
+  sampled[sampledIdx] = pts[n - 1];
+  return sampled;
 }

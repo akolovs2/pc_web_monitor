@@ -9,7 +9,7 @@ router = APIRouter(tags=["Metrics"])
 @router.get("/metrics/history")
 async def get_history(
     range: str = "24h",
-    limit: int = 2500,
+    limit: int = 1000,
     service: TelemetryService = Depends(get_telemetry_service),
 ):
     """Fetches downsampled historical telemetry for graphs and dashboards."""

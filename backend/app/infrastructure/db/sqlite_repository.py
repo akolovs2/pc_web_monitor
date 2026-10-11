@@ -46,7 +46,7 @@ def _downsample_records(records: List[MetricRecord], limit: int) -> List[Histori
             for r in records
         ]
 
-    # Partition records into `limit` time buckets, preserving peak values in each bucket
+    # Partition records into `limit` time buckets
     bucket_size = total / limit
     downsampled: List[HistoricalMetricPoint] = []
 
@@ -57,35 +57,71 @@ def _downsample_records(records: List[MetricRecord], limit: int) -> List[Histori
         if not chunk:
             continue
 
-        # Find the record with the highest peak activity in this bucket
-        peak_record = max(chunk, key=lambda r: (r.cpu_percent, r.ram_percent))
+        chunk_len = len(chunk)
+        avg_cpu = sum(r.cpu_percent for r in chunk) / chunk_len
+        avg_ram = sum(r.ram_percent for r in chunk) / chunk_len
+        avg_storage = sum(r.storage_percent for r in chunk) / chunk_len
 
-        peak_cpu = max(r.cpu_percent for r in chunk)
-        peak_ram = max(r.ram_percent for r in chunk)
-        peak_storage = max(r.storage_percent for r in chunk)
-        peak_storage_used = max((r.storage_used_gb or 0.0) for r in chunk)
+        valid_storage_used = [r.storage_used_gb for r in chunk if r.storage_used_gb is not None]
+        avg_storage_used = sum(valid_storage_used) / len(valid_storage_used) if valid_storage_used else None
         storage_total = chunk[-1].storage_total_gb
-        peak_containers = max((r.containers_count or 0) for r in chunk)
-        peak_running = max((r.running_containers or 0) for r in chunk)
 
-        # Preserve the exact peak timestamp so hover and tooltips match 1h perfectly
-        if i == limit - 1:
-            ts = chunk[-1].timestamp
-        elif peak_cpu > 5.0 or peak_ram > 5.0:
-            ts = peak_record.timestamp
+        peak_cpu_rec = max(chunk, key=lambda r: r.cpu_percent)
+        peak_ram_rec = max(chunk, key=lambda r: r.ram_percent)
+
+        max_cpu = peak_cpu_rec.cpu_percent
+        max_ram = peak_ram_rec.ram_percent
+
+        # Peak detection:
+        # A significant transient CPU spike is noticeably above baseline (> 3.0% and > 1.8x average, or >= 5.0%)
+        is_cpu_spike = (max_cpu >= 3.0 and max_cpu >= 1.8 * (avg_cpu or 0.1)) or (max_cpu >= 5.0)
+        is_ram_spike = (max_ram - avg_ram >= 3.0)
+
+        # Detect container restarts / crash loops / lifecycle changes
+        running_vals = [r.running_containers for r in chunk if r.running_containers is not None]
+        container_vals = [r.containers_count for r in chunk if r.containers_count is not None]
+        has_container_event = (
+            (len(running_vals) > 0 and max(running_vals) != min(running_vals)) or
+            (len(container_vals) > 0 and max(container_vals) != min(container_vals))
+        )
+
+        if is_cpu_spike or is_ram_spike:
+            # Anchor to peak event timestamp so hover/tooltip matches the exact moment of the spike
+            peak_rec = peak_cpu_rec if (max_cpu / (avg_cpu or 0.1) >= max_ram / (avg_ram or 0.1)) else peak_ram_rec
+            ts = peak_rec.timestamp
+            val_cpu = round(max_cpu, 2) if is_cpu_spike else round(avg_cpu, 2)
+            val_ram = round(max_ram, 2) if is_ram_spike else round(avg_ram, 2)
+            val_storage = round(avg_storage, 2)
+            val_containers = peak_rec.containers_count if peak_rec.containers_count is not None else chunk[-1].containers_count
+            val_running = peak_rec.running_containers if peak_rec.running_containers is not None else chunk[-1].running_containers
+        elif has_container_event:
+            # Lifecycle event occurred: preserve event point
+            event_rec = next((r for r in chunk if r.running_containers != chunk[0].running_containers), chunk[-1])
+            ts = event_rec.timestamp
+            val_cpu = round(avg_cpu, 2)
+            val_ram = round(avg_ram, 2)
+            val_storage = round(avg_storage, 2)
+            val_containers = event_rec.containers_count
+            val_running = event_rec.running_containers
         else:
-            ts = chunk[len(chunk) // 2].timestamp
+            # Steady baseline / idle noise: use bucket average and center timestamp
+            ts = chunk[-1].timestamp if i == limit - 1 else chunk[chunk_len // 2].timestamp
+            val_cpu = round(avg_cpu, 2)
+            val_ram = round(avg_ram, 2)
+            val_storage = round(avg_storage, 2)
+            val_containers = chunk[-1].containers_count
+            val_running = chunk[-1].running_containers
 
         downsampled.append(
             HistoricalMetricPoint(
                 timestamp=_format_timestamp(ts),
-                cpu=round(peak_cpu, 2),
-                ram=round(peak_ram, 2),
-                storage=round(peak_storage, 2),
-                storage_used_gb=round(peak_storage_used, 2) if peak_storage_used > 0 else None,
+                cpu=val_cpu,
+                ram=val_ram,
+                storage=val_storage,
+                storage_used_gb=round(avg_storage_used, 2) if avg_storage_used is not None else None,
                 storage_total_gb=storage_total,
-                containers_count=peak_containers,
-                running_containers=peak_running,
+                containers_count=val_containers,
+                running_containers=val_running,
             )
         )
 
@@ -130,7 +166,7 @@ class SqliteMetricsRepository(IMetricsRepository):
         finally:
             session.close()
 
-    def get_history(self, range_str: str = "24h", limit: int = 2500) -> List[HistoricalMetricPoint]:
+    def get_history(self, range_str: str = "24h", limit: int = 1000) -> List[HistoricalMetricPoint]:
         delta = _parse_time_range(range_str)
         since = datetime.now(timezone.utc) - delta
 

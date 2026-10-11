@@ -45,8 +45,8 @@ export const ChartCanvas: React.FC<Props> = React.memo(({
       >
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={fillColor} stopOpacity="0.45" />
-            <stop offset="75%" stopColor={fillColor} stopOpacity="0.10" />
+            <stop offset="0%" stopColor={fillColor} stopOpacity="0.22" />
+            <stop offset="70%" stopColor={fillColor} stopOpacity="0.04" />
             <stop offset="100%" stopColor={fillColor} stopOpacity="0.0" />
           </linearGradient>
           <clipPath id={clipId}>
@@ -98,7 +98,7 @@ export const ChartCanvas: React.FC<Props> = React.memo(({
             d={linePath}
             fill="none"
             stroke={strokeColor}
-            strokeWidth="2.5"
+            strokeWidth="1.8"
             strokeLinecap="round"
             strokeLinejoin="round"
             clipPath={`url(#${clipId})`}
