@@ -29,6 +29,63 @@ def _format_timestamp(dt: Optional[datetime]) -> str:
     return s
 
 
+def _despike_records(records: List[MetricRecord], threshold: float = 0.8) -> List[MetricRecord]:
+    """Filters out transient 1-2 sample impulse noise spikes from CPU telemetry while strictly preserving sustained workloads."""
+    n = len(records)
+    if n <= 3:
+        return records
+
+    cleaned = list(records)
+    i = 1
+    while i < n - 1:
+        prev_cpu = cleaned[i - 1].cpu_percent
+        curr_cpu = cleaned[i].cpu_percent
+        next_cpu = records[i + 1].cpu_percent
+
+        # Case 1: isolated 1-sample spike jumping above both neighbors
+        baseline1 = (prev_cpu + next_cpu) / 2
+        if curr_cpu > baseline1 + threshold and curr_cpu > prev_cpu * 1.5 and curr_cpu > next_cpu * 1.5:
+            r = cleaned[i]
+            cleaned[i] = MetricRecord(
+                id=r.id,
+                timestamp=r.timestamp,
+                cpu_percent=round(baseline1, 2),
+                ram_percent=r.ram_percent,
+                storage_percent=r.storage_percent,
+                storage_used_gb=r.storage_used_gb,
+                storage_total_gb=r.storage_total_gb,
+                containers_count=r.containers_count,
+                running_containers=r.running_containers,
+            )
+            i += 1
+            continue
+
+        # Case 2: isolated 2-sample spike with lower neighbors on both sides
+        if i < n - 2:
+            after_cpu = records[i + 2].cpu_percent
+            baseline2 = (prev_cpu + after_cpu) / 2
+            if (curr_cpu > baseline2 + threshold and next_cpu > baseline2 + threshold and
+                curr_cpu > prev_cpu * 1.5 and next_cpu > after_cpu * 1.5):
+                for idx in (i, i + 1):
+                    r = cleaned[idx]
+                    cleaned[idx] = MetricRecord(
+                        id=r.id,
+                        timestamp=r.timestamp,
+                        cpu_percent=round(baseline2, 2),
+                        ram_percent=r.ram_percent,
+                        storage_percent=r.storage_percent,
+                        storage_used_gb=r.storage_used_gb,
+                        storage_total_gb=r.storage_total_gb,
+                        containers_count=r.containers_count,
+                        running_containers=r.running_containers,
+                    )
+                i += 2
+                continue
+
+        i += 1
+    return cleaned
+
+
 def _downsample_records(records: List[MetricRecord], limit: int) -> List[HistoricalMetricPoint]:
     total = len(records)
     if total <= limit or limit <= 0:
@@ -66,17 +123,6 @@ def _downsample_records(records: List[MetricRecord], limit: int) -> List[Histori
         avg_storage_used = sum(valid_storage_used) / len(valid_storage_used) if valid_storage_used else None
         storage_total = chunk[-1].storage_total_gb
 
-        peak_cpu_rec = max(chunk, key=lambda r: r.cpu_percent)
-        peak_ram_rec = max(chunk, key=lambda r: r.ram_percent)
-
-        max_cpu = peak_cpu_rec.cpu_percent
-        max_ram = peak_ram_rec.ram_percent
-
-        # Peak detection:
-        # A significant transient CPU spike is noticeably above baseline (> 3.0% and > 1.8x average, or >= 5.0%)
-        is_cpu_spike = (max_cpu >= 3.0 and max_cpu >= 1.8 * (avg_cpu or 0.1)) or (max_cpu >= 5.0)
-        is_ram_spike = (max_ram - avg_ram >= 3.0)
-
         # Detect container restarts / crash loops / lifecycle changes
         running_vals = [r.running_containers for r in chunk if r.running_containers is not None]
         container_vals = [r.containers_count for r in chunk if r.containers_count is not None]
@@ -85,32 +131,19 @@ def _downsample_records(records: List[MetricRecord], limit: int) -> List[Histori
             (len(container_vals) > 0 and max(container_vals) != min(container_vals))
         )
 
-        if is_cpu_spike or is_ram_spike:
-            # Anchor to peak event timestamp so hover/tooltip matches the exact moment of the spike
-            peak_rec = peak_cpu_rec if (max_cpu / (avg_cpu or 0.1) >= max_ram / (avg_ram or 0.1)) else peak_ram_rec
-            ts = peak_rec.timestamp
-            val_cpu = round(max_cpu, 2) if is_cpu_spike else round(avg_cpu, 2)
-            val_ram = round(max_ram, 2) if is_ram_spike else round(avg_ram, 2)
-            val_storage = round(avg_storage, 2)
-            val_containers = peak_rec.containers_count if peak_rec.containers_count is not None else chunk[-1].containers_count
-            val_running = peak_rec.running_containers if peak_rec.running_containers is not None else chunk[-1].running_containers
-        elif has_container_event:
-            # Lifecycle event occurred: preserve event point
+        ts = chunk[-1].timestamp if i == limit - 1 else chunk[chunk_len // 2].timestamp
+        val_cpu = round(avg_cpu, 2)
+        val_ram = round(avg_ram, 2)
+        val_storage = round(avg_storage, 2)
+        val_containers = chunk[-1].containers_count
+        val_running = chunk[-1].running_containers
+
+        # If a container lifecycle event occurred, anchor to the exact event
+        if has_container_event:
             event_rec = next((r for r in chunk if r.running_containers != chunk[0].running_containers), chunk[-1])
             ts = event_rec.timestamp
-            val_cpu = round(avg_cpu, 2)
-            val_ram = round(avg_ram, 2)
-            val_storage = round(avg_storage, 2)
             val_containers = event_rec.containers_count
             val_running = event_rec.running_containers
-        else:
-            # Steady baseline / idle noise: use bucket average and center timestamp
-            ts = chunk[-1].timestamp if i == limit - 1 else chunk[chunk_len // 2].timestamp
-            val_cpu = round(avg_cpu, 2)
-            val_ram = round(avg_ram, 2)
-            val_storage = round(avg_storage, 2)
-            val_containers = chunk[-1].containers_count
-            val_running = chunk[-1].running_containers
 
         downsampled.append(
             HistoricalMetricPoint(
@@ -181,10 +214,12 @@ class SqliteMetricsRepository(IMetricsRepository):
             if not records:
                 return []
 
-            # 1h (~360 records) and 6h (~2160 records) are kept raw without downsampling
-            # so that no data points or spikes are ever lost.
+            # Despike telemetry to eliminate 1-2 sample impulse blips
+            despiked = _despike_records(records)
+
+            # 1h (~360 records) is kept raw; longer ranges (6h, 24h, 7d, 14d) are downsampled
             clean_range = range_str.lower().strip()
-            if clean_range in ("1h", "6h") or len(records) <= limit:
+            if clean_range == "1h" or len(records) <= limit:
                 return [
                     HistoricalMetricPoint(
                         timestamp=_format_timestamp(r.timestamp),
@@ -196,10 +231,10 @@ class SqliteMetricsRepository(IMetricsRepository):
                         containers_count=r.containers_count,
                         running_containers=r.running_containers,
                     )
-                    for r in records
+                    for r in despiked
                 ]
 
-            return _downsample_records(records, limit)
+            return _downsample_records(despiked, limit)
         except Exception as e:
             print(f"[SqliteMetricsRepository] Error fetching history: {e}")
             return []

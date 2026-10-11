@@ -90,6 +90,57 @@ export function smoothPath(pts: readonly [number, number][]): string {
 }
 
 /**
+ * Filters out isolated 1-2 sample impulse spikes (background jitter/micro-blips)
+ * while strictly preserving genuine sustained load changes.
+ */
+export function despikeValues(vals: readonly number[], threshold = 0.8): number[] {
+  const n = vals.length;
+  if (n <= 3) return [...vals];
+
+  const out = [...vals];
+  let i = 1;
+
+  while (i < n - 1) {
+    const prev = out[i - 1];
+    const curr = out[i];
+    const next = vals[i + 1];
+
+    // Case 1: isolated 1-sample spike jumping above both neighbors
+    const baseline1 = (prev + next) / 2;
+    if (
+      curr > baseline1 + threshold &&
+      curr > prev * 1.5 &&
+      curr > next * 1.5
+    ) {
+      out[i] = baseline1;
+      i += 1;
+      continue;
+    }
+
+    // Case 2: isolated 2-sample spike with lower neighbors on both sides
+    if (i < n - 2) {
+      const after = vals[i + 2];
+      const baseline2 = (prev + after) / 2;
+      if (
+        curr > baseline2 + threshold &&
+        next > baseline2 + threshold &&
+        curr > prev * 1.5 &&
+        next > after * 1.5
+      ) {
+        out[i] = baseline2;
+        out[i + 1] = baseline2;
+        i += 2;
+        continue;
+      }
+    }
+
+    i += 1;
+  }
+
+  return out;
+}
+
+/**
  * Downsamples dense coordinate arrays using the Largest Triangle Three Buckets (LTTB) algorithm.
  * Mathematically preserves visual peaks, troughs, and data trends without introducing
  * artificial alternating oscillations or fuzzy carpet artifacts.

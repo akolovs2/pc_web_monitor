@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { W, H, PAD, CH, smoothPath, decimateCoords } from "./core/chart-math";
+import { W, H, PAD, CH, smoothPath, decimateCoords, despikeValues } from "./core/chart-math";
 import { useLineChart } from "./core/use-line-chart";
 import { ChartCanvas } from "./core/canvas";
 
@@ -91,7 +91,10 @@ export const MetricLineChart: React.FC<MetricLineChartProps> = React.memo(({
     useLineChart();
 
   const N = data.length;
-  const values = useMemo(() => data.map((d) => d.value ?? 0), [data]);
+  const values = useMemo(() => {
+    const raw = data.map((d) => d.value ?? 0);
+    return despikeValues(raw);
+  }, [data]);
 
   const leftPad =
     containerW > 0
